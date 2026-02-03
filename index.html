@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <title>CRM</title>
+</head>
+<body>
+    <nav class="parent">
+        <div class="parent">
+            <img alt="Меню" src="menu.svg">
+            <h1>CRM</h1>
+        </div>
+        <div>
+            <p style="color: white;">Почта</p>
+            <p style="color: blue;">Название</p>
+        </div>
+    </nav>
+    <header class="parent">
+        <h2>Список заказов</h2>
+        <button id="addOrder">Добавить заказ</button>
+    </header>
+    <main>
+        <table id="orderTable">
+            <thead><tr>
+                <th>Номер</th>
+                <th>Модель</th>
+                <th>Статус</th>
+                <th>Неисправность</th>
+                <th>Цена</th>
+                <th>Исполнитель</th>
+                <th>Приём</th>
+                <th>До выдачи</th>
+            </tr></thead>
+
+            <tbody>
+                <tr>
+                    <td>1</td>
+                    <td>Redmi Note 12</td>
+                    <td>Сделан</td>
+                    <td>Не включается</td>
+                    <td>10000</td>
+                    <td>Тамайчук В.Е.</td>
+                    <td>11.11.2026</td>
+                    <td>1 день</td>
+                </tr>
+            </tbody>
+        </table>
+    </main>
+    <div id="modal"> <!--Модальное окно-->
+        <div id="modal-window">
+            <img id="closeButton" src="close.svg"></img>
+            <div id="modal-content">
+                <p>Модель</p> <input id="modelInput">
+                <p>Статус</p> <select id="statusInput">
+                    <option>Сделан</option>
+                    <option>В работе</option>
+                    <option>Не сделан</option>
+                </select>
+                <p>Неисправность</p> <input id="crushInput">
+                <p>Цена</p> <input type="number" id="priceInput">
+                <p>Исполнитель</p> <input id="workerInput">
+                <p>Приём</p> <input type="date" id="dateInput">
+                <p><button id="modal-button">Добавить</button></p>
+            </div>
+        </div>
+    </div>
+</body>
+<script src="script.js"></script>
+</html>
