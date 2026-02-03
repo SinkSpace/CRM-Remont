@@ -17,7 +17,7 @@
     const workerInput = document.getElementById('workerInput');
     const dateInput = document.getElementById('dateInput');
 
-    document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('DOMContentLoaded', () => { /* загрузка страницы */
         renderTasks(); /* обработка памяти */
     });
 
@@ -72,7 +72,13 @@
         const parts = rawDate.split('-'); /* разбор составных частей даты */
         const formattedDate = `${parts[2]}.${parts[1]}.${parts[0]}`; /* изменение формата даты */
 
-        addTask(); /* сохранение в локал */
+        if (modelInput.value == '') alert('Поле "Модель" не может быть пустым');
+        else if (crushInput.value == '') alert('Поле "Неисправность" не может быть пустым');
+        else if (priceInput.value == '') alert ('Поле "Цена" не может быть пустым');
+        else if (workerInput.value == '') alert ('Поле "Исполнитель" не может быть пустым');
+        else if (rawDate == '') alert ('Поле "Дата" не может быть пустым');
+        else addTask(); /* сохранение в локал */
+
         renderTasks(); /* обработка памяти */
 
         const crOr = document.createElement('tr'); /* Добавление строки таблицы */
