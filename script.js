@@ -17,12 +17,12 @@
     const workerInput = document.getElementById('workerInput');
     const dateInput = document.getElementById('dateInput');
 
+    /* Локальная память */
+    let tasks = JSON.parse(localStorage.getItem("tasks")) || []; /* берёт данные браузера, если нет - создаёт новые */
+
     document.addEventListener('DOMContentLoaded', () => { /* загрузка страницы */
         renderTasks(); /* обработка памяти */
     });
-
-    /* Локальная память */
-    let tasks = JSON.parse(localStorage.getItem("tasks")) || []; /* берёт данные браузера, если нет - создаёт новые */
 
     function addTask() {
         const task = { /* характеристики добавления в память */
@@ -39,7 +39,8 @@
         localStorage.setItem("tasks", JSON.stringify(tasks)); /* сохранение */
     } 
 
-    function renderTasks() { /* обработка памяти */
+    /* обработка памяти */
+    function renderTasks() { 
         const tbody = orderTable.querySelector("tbody"); /* выбор первого элемента таблицы на странице */
         tbody.innerHTML = ''; /* enter для читаемости */
 
@@ -52,8 +53,12 @@
             <td>${task.crush}</td>
             <td>${task.price}</td>
             <td>${task.worker}</td>
-            <td>${task.acceptDate}</td>
-            <td>-</td>`;
+            <td>${formattedDate(task.acceptDate)}</td>
+            <td>${calcDays(task.acceptDate)} дн.</td>
+            <td>
+                <button onclick="editTask(${index})">📝</button>
+                <button onclick="deleteTask(${index})">❌</button>
+            </td>`;
             tbody.appendChild(tr); /* закрывающий аргумент строки таблицы */
         });
     }
@@ -62,39 +67,34 @@
         console.log(task.model, task.acceptDate);
     });
 
-    modalButton.onclick = () => {
-        const acceptDate = new Date(dateInput.value); /* дата из инпута */
+    /* удаление задачи */
+    function deleteTask(index) {
+        tasks.splice(index, 1); /* вырез элемента */
+        localStorage.setItem("tasks", JSON.stringify(tasks));
+        renderTasks(); /* перезагрузка таблицы */
+    }
+
+    function calcDays(dateString) {
+        const acceptDate = new Date(dateString); /* дата из инпута */
         const today = new Date(); /* текущая дата */
         const diffMs = acceptDate - today; /* вычитание дат */
-        const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24)); /* перевод миллисекунд в дни */
+        return Math.ceil(diffMs / (1000 * 60 * 60 * 24)); /* перевод миллисекунд в дни */
+    }
 
-        const rawDate = dateInput.value;
+    function formattedDate(dateString) {
+        const rawDate = dateString;
         const parts = rawDate.split('-'); /* разбор составных частей даты */
-        const formattedDate = `${parts[2]}.${parts[1]}.${parts[0]}`; /* изменение формата даты */
+        return `${parts[2]}.${parts[1]}.${parts[0]}`; /* изменение формата даты */
+    }
 
+    modalButton.onclick = () => {
         if (modelInput.value == '') alert('Поле "Модель" не может быть пустым');
         else if (crushInput.value == '') alert('Поле "Неисправность" не может быть пустым');
         else if (priceInput.value == '') alert ('Поле "Цена" не может быть пустым');
         else if (workerInput.value == '') alert ('Поле "Исполнитель" не может быть пустым');
-        else if (rawDate == '') alert ('Поле "Дата" не может быть пустым');
+        else if (dateInput.value == '') alert ('Поле "Дата" не может быть пустым');
         else addTask(); /* сохранение в локал */
 
         renderTasks(); /* обработка памяти */
-
-        const crOr = document.createElement('tr'); /* Добавление строки таблицы */
-        crOr.innerHTML = `
-            <td>${tbody.children.length + 1}</td>
-            <td>${modelInput.value}</td>
-            <td>${statusInput.value}</td>
-            <td>${crushInput.value}</td>
-            <td>${priceInput.value}</td>
-            <td>${workerInput.value}</td>
-            <td>${formattedDate}</td>
-            <td>${diffDays} дн.</td>
-        `
-        /* orderTable.children.length - количество дочерних элементов*/
-        /* value - пользовательский ввод */
-        orderTable.appendChild(crOr); /* добавление таблицы из памяти на сайт */
-
         modal.style.display = 'none'; /* закрытие окна */
     }
