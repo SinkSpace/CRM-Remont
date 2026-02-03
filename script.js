@@ -17,13 +17,17 @@
     const workerInput = document.getElementById('workerInput');
     const dateInput = document.getElementById('dateInput');
 
-    /* Локальная память */
-    /*let tasks = JSON.parse(localStorage.getItem("tasks")) || []; /* берёт данные браузера, если нет - создаёт новые */
+    document.addEventListener('DOMContentLoaded', () => {
+        renderTasks(); /* обработка памяти */
+    });
 
-    /*function addTask() {
+    /* Локальная память */
+    let tasks = JSON.parse(localStorage.getItem("tasks")) || []; /* берёт данные браузера, если нет - создаёт новые */
+
+    function addTask() {
         const task = { /* характеристики добавления в память */
-            /*model: modelInput.value,
-            status: modelInput.value,
+            model: modelInput.value,
+            status: statusInput.value,
             crush: crushInput.value,
             price: priceInput.value,
             worker: workerInput.value,
@@ -32,11 +36,30 @@
 
         tasks.push(task); /* добавление МАСССИВА в память */
 
-        /*localStorage.setItem("tasks", JSON.stringify(tasks)); /* сохранение */
-    /*} */
+        localStorage.setItem("tasks", JSON.stringify(tasks)); /* сохранение */
+    } 
+
+    function renderTasks() { /* обработка памяти */
+        const tbody = orderTable.querySelector("tbody"); /* выбор первого элемента таблицы на странице */
+        tbody.innerHTML = ''; /* enter для читаемости */
+
+        tasks.forEach((task, index) => {
+            const tr = document.createElement('tr'); /* создание строки таблицы */
+            tr.innerHTML = /* создание ячеек */ `
+            <td>${index + 1}</td>
+            <td>${task.model}</td>
+            <td>${task.status}</td>
+            <td>${task.crush}</td>
+            <td>${task.price}</td>
+            <td>${task.worker}</td>
+            <td>${task.acceptDate}</td>
+            <td>-</td>`;
+            tbody.appendChild(tr); /* закрывающий аргумент строки таблицы */
+        });
+    }
 
     tasks.forEach(task => {
-        console.log(task.title, task.startDate);
+        console.log(task.model, task.acceptDate);
     });
 
     modalButton.onclick = () => {
@@ -49,11 +72,12 @@
         const parts = rawDate.split('-'); /* разбор составных частей даты */
         const formattedDate = `${parts[2]}.${parts[1]}.${parts[0]}`; /* изменение формата даты */
 
-        /*addTask(); /* сохранение в локал */
+        addTask(); /* сохранение в локал */
+        renderTasks(); /* обработка памяти */
 
         const crOr = document.createElement('tr'); /* Добавление строки таблицы */
         crOr.innerHTML = `
-            <td>${orderTable.children.length}</td>
+            <td>${tbody.children.length + 1}</td>
             <td>${modelInput.value}</td>
             <td>${statusInput.value}</td>
             <td>${crushInput.value}</td>
@@ -64,7 +88,7 @@
         `
         /* orderTable.children.length - количество дочерних элементов*/
         /* value - пользовательский ввод */
-        /*orderTable.appendChild(crOr); /* добавление таблицы из памяти на сайт */
+        orderTable.appendChild(crOr); /* добавление таблицы из памяти на сайт */
 
         modal.style.display = 'none'; /* закрытие окна */
     }
