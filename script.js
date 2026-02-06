@@ -6,7 +6,10 @@
     const addOrder = document.getElementById('addOrder'); /* взаимодействие с кнопкой открытия */
 
     closeButton.onclick = () => modal.style.display = 'none';
-    addOrder.onclick = () => modal.style.display = 'flex';
+    addOrder.onclick = () => {
+        clearForm();
+        modal.style.display = 'flex'
+    };
     modal.onclick = (event /* объект события */) => {if (event.target === modal) modal.style.display = 'none'};
 
     /* Добавление в таблицу */
@@ -38,16 +41,18 @@
         else if (crushInput.value == '') alert('Поле "Неисправность" не может быть пустым');
         else if (priceInput.value == '') alert ('Поле "Цена" не может быть пустым');
         else if (workerInput.value == '') alert ('Поле "Исполнитель" не может быть пустым');
-        else if (dateBeginInput.value = '') alert ('Поле "Дата приёма" не может быть пустым');
+        else if (dateBeginInput.value == '') alert ('Поле "Дата приёма" не может быть пустым');
         else if (dateInput.value == '') alert ('Поле "Дата выдачи" не может быть пустым');
         else addTask(); /* сохранение в локал */
 
+        clearForm();
         renderTasks(); /* обработка памяти */
         modal.style.display = 'none'; /* закрытие окна */
     }
 
     /******** ФУНКЦИИ *********/
 
+    /* добавление задачи */
     function addTask() {
         modelSecurity = escapeHTML(modelInput.value);
         crushSecurity = escapeHTML(crushInput.value);
@@ -66,7 +71,13 @@
             acceptDate: dateInput.value
         };
 
-        tasks.push(task); /* добавление МАСССИВА в память */
+        if (editIndex == null) {
+            tasks.push(task); /* добавление МАСССИВА в память */
+        } else {
+            tasks[editIndex] = task; 
+            editIndex = null; /* переключение на режим добавления */
+            modalButton.textContent = "Добавить"; /* изменение текста кнопки */
+        }
 
         localStorage.setItem("tasks", JSON.stringify(tasks)); /* сохранение */
     } 
@@ -75,6 +86,15 @@
     function renderTasks() { 
         const tbody = orderTable.querySelector("tbody"); /* выбор первого элемента таблицы на странице */
         tbody.innerHTML = ''; /* enter для читаемости */
+
+        if (tasks.length === 0) {
+            orderTable.style.visibility = "hidden";
+            document.getElementById('noTask').style.visibility = "visible";
+            return;
+        }
+
+        orderTable.style.visibility = "visible";
+        document.getElementById('noTask').style.visibility = "hidden";
 
         tasks.forEach((task, index) => {
             const tr = document.createElement('tr'); /* создание строки таблицы */
@@ -93,12 +113,26 @@
             </td>`;
             tbody.appendChild(tr); /* закрывающий аргумент строки таблицы */
         });
+    }
 
-        if (tasks.length == 0) 
-        {
-            document.getElementById('orderTable').style.visibility = "hidden";
-            document.getElementById('noTask').style.visibility = "visible";
-        };
+    /* редактирование задачи */
+    function editTask(index) {
+        /* импорт из массива в редактирование */
+        const task = tasks[index];
+
+        deviceInput.value = task.device;
+        modelInput.value = task.model;
+        statusInput.value = task.status;
+        crushInput.value = task.crush;
+        priceInput.value = task.price;
+        noteInput.value = task.note;
+        workerInput.value = task.worker;
+        dateBeginInput.value = task.beginDate;
+        dateInput.value = task.acceptDate;
+
+        editIndex = index;  /* переключение на режим редактирования */;
+        modalButton.textContent = "Сохранить"; /* изменение текста кнопки */;
+        modal.style.display = 'flex';
     }
 
     /* удаление задачи */
@@ -130,3 +164,19 @@
           .replace(/"/g, '&quot;')
           .replace(/'/g, '&#039;');
       }
+
+    /* очистка форм */
+    function clearForm() {
+        deviceInput.value = '';
+        modelInput.value = '';
+        statusInput.value = '';
+        crushInput.value = '';
+        priceInput.value = '';
+        noteInput.value = '';
+        workerInput.value = '';
+        dateBeginInput.value = '';
+        dateInput.value = '';
+
+        editIndex = null;
+        modalButton.textContent = 'Добавить';
+    }
