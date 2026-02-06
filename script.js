@@ -1,3 +1,5 @@
+    let editIndex = null; /* переключатель режима редактирования */
+    
     /* Модальное окно */
     const closeButton = document.getElementById('closeButton'); /* взаимодействие с кнопкой закрытия */
     const modal = document.getElementById('modal'); /* взаимодействие с модальным окном */
@@ -10,11 +12,14 @@
     /* Добавление в таблицу */
     const modalButton = document.getElementById('modal-button');
     const orderTable = document.getElementById('orderTable');
+    const deviceInput = document.getElementById('deviceInput')
     const modelInput = document.getElementById('modelInput');
     const statusInput = document.getElementById('statusInput');
     const crushInput = document.getElementById('crushInput');
     const priceInput = document.getElementById('priceInput');
+    const noteInput = document.getElementById('noteInput');
     const workerInput = document.getElementById('workerInput');
+    const dateBeginInput = document.getElementById('dateBeginInput');
     const dateInput = document.getElementById('dateInput');
 
     /* Локальная память */
@@ -24,13 +29,40 @@
         renderTasks(); /* обработка памяти */
     });
 
+    tasks.forEach(task => {
+        console.log(task.model, task.acceptDate);
+    });
+
+    modalButton.onclick = () => {
+        if (modelInput.value == '') alert('Поле "Модель" не может быть пустым');
+        else if (crushInput.value == '') alert('Поле "Неисправность" не может быть пустым');
+        else if (priceInput.value == '') alert ('Поле "Цена" не может быть пустым');
+        else if (workerInput.value == '') alert ('Поле "Исполнитель" не может быть пустым');
+        else if (dateBeginInput.value = '') alert ('Поле "Дата приёма" не может быть пустым');
+        else if (dateInput.value == '') alert ('Поле "Дата выдачи" не может быть пустым');
+        else addTask(); /* сохранение в локал */
+
+        renderTasks(); /* обработка памяти */
+        modal.style.display = 'none'; /* закрытие окна */
+    }
+
+    /******** ФУНКЦИИ *********/
+
     function addTask() {
+        modelSecurity = escapeHTML(modelInput.value);
+        crushSecurity = escapeHTML(crushInput.value);
+        workerSecurity = escapeHTML(workerInput.value);
+        noteSecurity = escapeHTML(noteInput.value);
+
         const task = { /* характеристики добавления в память */
-            model: modelInput.value,
+            device: deviceInput.value,
+            model: modelSecurity,
             status: statusInput.value,
-            crush: crushInput.value,
+            crush: crushSecurity,
             price: priceInput.value,
-            worker: workerInput.value,
+            note: noteSecurity,
+            worker: workerSecurity,
+            beginDate: dateBeginInput.value,
             acceptDate: dateInput.value
         };
 
@@ -61,11 +93,13 @@
             </td>`;
             tbody.appendChild(tr); /* закрывающий аргумент строки таблицы */
         });
-    }
 
-    tasks.forEach(task => {
-        console.log(task.model, task.acceptDate);
-    });
+        if (tasks.length == 0) 
+        {
+            document.getElementById('orderTable').style.visibility = "hidden";
+            document.getElementById('noTask').style.visibility = "visible";
+        };
+    }
 
     /* удаление задачи */
     function deleteTask(index) {
@@ -87,14 +121,12 @@
         return `${parts[2]}.${parts[1]}.${parts[0]}`; /* изменение формата даты */
     }
 
-    modalButton.onclick = () => {
-        if (modelInput.value == '') alert('Поле "Модель" не может быть пустым');
-        else if (crushInput.value == '') alert('Поле "Неисправность" не может быть пустым');
-        else if (priceInput.value == '') alert ('Поле "Цена" не может быть пустым');
-        else if (workerInput.value == '') alert ('Поле "Исполнитель" не может быть пустым');
-        else if (dateInput.value == '') alert ('Поле "Дата" не может быть пустым');
-        else addTask(); /* сохранение в локал */
-
-        renderTasks(); /* обработка памяти */
-        modal.style.display = 'none'; /* закрытие окна */
-    }
+    /* HTML-инъекция */
+    function escapeHTML(str) {
+        return str
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#039;');
+      }

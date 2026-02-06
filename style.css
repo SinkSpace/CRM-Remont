@@ -94,10 +94,15 @@ th, td {
     display: flex;
     background-color: white;
     width: 50vw;
-    height: 75vh;
+    height: 95vh;
     justify-content: center;
     align-items: center;
     position: relative;
+}
+
+#modal-window input, select {
+    height: 30px;
+    width: 500px;
 }
 
 #modal-button {
@@ -117,4 +122,23 @@ th, td {
     right: 15px;
     width: 15px;
     height: 15px;
+}
+
+#noTask {
+    width: 100vw;
+    text-align: center;
+    visibility: hidden;
+}
+
+#dateDiv {
+    display: flex;
+    justify-content: space-between;
+}
+
+#dateBeginInput, #dateInput {
+    width: 200px !important;
+}
+
+#deviceInput, #modelInput {
+    width: 220px !important;
 }

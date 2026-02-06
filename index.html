@@ -40,20 +40,36 @@
             </tbody>
         </table>
     </main>
+    <p><h1 id="noTask">Активных задач нет</h1></p>
     <div id="modal"> <!--Модальное окно-->
         <div id="modal-window">
             <img id="closeButton" src="close.svg"></img>
             <div id="modal-content">
-                <p>Модель</p> <input id="modelInput">
+                <div id="dateDiv"><section>
+                <p>Устройство</p> <select id="deviceInput">
+                    <option>Смартфон</option>
+                    <option>Планшет</option>
+                    <option>Ноутбук</option>
+                    <option>Настольный компьютер</option>
+                    <option>Умные часы</option>
+                    <option>Фитнес‑браслет</option>
+                    <option>Электронная книга</option>
+                    <option>Игровая консоль</option>
+                    <option>Смарт‑телевизор</option>
+                    <option>Голосовой помощник (умная колонка)</option>
+                </select></section>
+                <section><p>Марка и модель</p> <input id="modelInput"></section></div>
                 <p>Статус</p> <select id="statusInput">
                     <option>Сделан</option>
                     <option>В работе</option>
                     <option>Не сделан</option>
                 </select>
                 <p>Неисправность</p> <input id="crushInput">
-                <p>Цена</p> <input type="number" id="priceInput">
+                <p>Стоимость ремонта</p> <input type="number" id="priceInput">
                 <p>Исполнитель</p> <input id="workerInput">
-                <p>Приём</p> <input type="date" id="dateInput">
+                <p>Примечание</p> <input id="noteInput">
+                <div id="dateDiv"><section><p>Дата приёма</p> <input type="date" id="dateBeginInput"></section>
+                <section><p>Дата выдачи</p> <input type="date" id="dateInput"></section></div>
                 <p><button id="modal-button">Добавить</button></p>
             </div>
         </div>
