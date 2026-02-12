@@ -13,25 +13,33 @@
             <h1>CRM</h1>
         </div>
         <div>
-            <p style="color: white;">Почта</p>
-            <p style="color: blue;">Название</p>
+            <input id="search" placeholder="                                                                                                                                  🔍">
+        </div>
+        <div>
+            <p style="color: white;">example@example.ru</p>
+            <p style="color: gray;">Магазин "Пример"</p>
         </div>
     </nav>
     <header class="parent">
         <h2>Список заказов</h2>
+        <select id="filter">
+            <option>Все</option>
+            <option>Активные</option>
+            <option>Выполненные</option>
+        </select>
         <button id="addOrder">Добавить заказ</button>
     </header>
     <main>
         <table id="orderTable">
             <thead><tr>
-                <th>Номер</th>
-                <th>Модель</th>
-                <th>Статус</th>
-                <th>Неисправность</th>
-                <th>Цена</th>
-                <th>Исполнитель</th>
-                <th>Выдача</th>
-                <th>До выдачи</th>
+                <th id="numberHead">Номер</th>
+                <th id="modelHead">Модель</th>
+                <th id="statusHead">Статус</th>
+                <th id="bugHead">Неисправность</th>
+                <th id="priceHead">Цена</th>
+                <th id="workerHead">Исполнитель</th>
+                <th id="dateBeginHead">Выдача</th>
+                <th id="dateHead">До выдачи</th>
                 <th>Действия</th>
             </tr></thead>
 

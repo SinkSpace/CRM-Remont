@@ -1,14 +1,18 @@
     let editIndex = null; /* переключатель режима редактирования */
+    let sortField = null; /* поле сортировки */
+    let sortDir = 1; /* сортировка по возрастанию или убыванию */
     
     /* Модальное окно */
     const closeButton = document.getElementById('closeButton'); /* взаимодействие с кнопкой закрытия */
     const modal = document.getElementById('modal'); /* взаимодействие с модальным окном */
     const addOrder = document.getElementById('addOrder'); /* взаимодействие с кнопкой открытия */
+    const complete = document.getElementById('filter');
+    const search = document.getElementById('search');
 
     closeButton.onclick = () => modal.style.display = 'none';
     addOrder.onclick = () => {
         clearForm();
-        modal.style.display = 'flex'
+        modal.style.display = 'flex';
     };
     modal.onclick = (event /* объект события */) => {if (event.target === modal) modal.style.display = 'none'};
 
@@ -28,6 +32,8 @@
     /* Локальная память */
     let tasks = JSON.parse(localStorage.getItem("tasks")) || []; /* берёт данные браузера, если нет - создаёт новые */
 
+    complete.addEventListener('change', function(event) { renderTasks() });
+    search.addEventListener('change', function(event) {renderTasks()});
     document.addEventListener('DOMContentLoaded', () => { /* загрузка страницы */
         renderTasks(); /* обработка памяти */
     });
@@ -43,12 +49,25 @@
         else if (workerInput.value == '') alert ('Поле "Исполнитель" не может быть пустым');
         else if (dateBeginInput.value == '') alert ('Поле "Дата приёма" не может быть пустым');
         else if (dateInput.value == '') alert ('Поле "Дата выдачи" не может быть пустым');
+        else if (modelInput.value.length > 50) alert ('Поле "Модель" не может содержать больше 50 символов');
+        else if (crushInput.value.length > 200) alert ('Поле "Неисправность" не может содержать больше 200 символов');
+        else if (priceInput.value > 8) alert ('Ремонт не может стоить дороже 99999999 рублей');
+        else if (workerInput.value > 20) alert ('Поле "Исполнитель" не может содержать больше 20 символов');
         else addTask(); /* сохранение в локал */
 
         clearForm();
         renderTasks(); /* обработка памяти */
         modal.style.display = 'none'; /* закрытие окна */
     }
+
+    /* сортировка */
+    document.getElementById('modelHead').onclick = () => sortTasks('model');
+    document.getElementById('statusHead').onclick = () => sortTasks('status');
+    document.getElementById('bugHead').onclick = () => sortTasks('crush');
+    document.getElementById('priceHead').onclick = () => sortTasks('price');
+    document.getElementById('workerHead').onclick = () => sortTasks('worker');
+    document.getElementById('dateBeginHead').oncancel = () => sortTasks('beginDate');
+    document.getElementById('dateHead').onclick = () => sortTasks('acceptDate');
 
     /******** ФУНКЦИИ *********/
 
@@ -97,22 +116,37 @@
         document.getElementById('noTask').style.visibility = "hidden";
 
         tasks.forEach((task, index) => {
-            const tr = document.createElement('tr'); /* создание строки таблицы */
-            tr.innerHTML = /* создание ячеек */ `
-            <td>${index + 1}</td>
-            <td>${task.model}</td>
-            <td>${task.status}</td>
-            <td>${task.crush}</td>
-            <td>${task.price}</td>
-            <td>${task.worker}</td>
-            <td>${formattedDate(task.acceptDate)}</td>
-            <td>${calcDays(task.acceptDate)} дн.</td>
-            <td>
-                <button onclick="editTask(${index})">📝</button>
-                <button onclick="deleteTask(${index})">❌</button>
-            </td>`;
-            tbody.appendChild(tr); /* закрывающий аргумент строки таблицы */
+            check = true;
+            checkSearch = false;
+            if (complete.value == 'Активные' && task.status == 'Сделан' ||
+                 complete.value == 'Выполненные' && (task.status == 'В работе' || task.status == 'Не сделан')) check = false;
+            if (search.value == '') checkSearch = true;
+            else if (task.model.includes(search.value) || task.crush.includes(search.value) || task.price.includes(search.value) || task.worker.includes(search.value)) checkSearch = true;
+            if (check && checkSearch) {
+                const tr = document.createElement('tr'); /* создание строки таблицы */
+                const daysLeft = calcDays(task.acceptDate);
+                tr.innerHTML = /* создание ячеек */ `
+                <td>${index + 1}</td>
+                <td>${task.model}</td>
+                <td>${task.status}</td>
+                <td>${task.crush}</td>
+                <td>${task.price}</td>
+                <td>${task.worker}</td>
+                <td>${formattedDate(task.acceptDate)}</td>
+                <td class="days-cell">${daysLeft} дн.</td>
+                <td>
+                    <button onclick="editTask(${index})">📝</button>
+                    <button onclick="deleteTask(${index})">❌</button>
+                </td>`;
+
+                if (daysLeft < 0) {
+                    tr.querySelector('.days-cell').style.color = "red"; /* выбор текущего сектора */
+                }
+
+                tbody.appendChild(tr); /* закрывающий аргумент строки таблицы */
+            }
         });
+
     }
 
     /* редактирование задачи */
@@ -146,6 +180,7 @@
         const acceptDate = new Date(dateString); /* дата из инпута */
         const today = new Date(); /* текущая дата */
         const diffMs = acceptDate - today; /* вычитание дат */
+        if (diffMs < 0) redInfo = true; else redInfo = false;
         return Math.ceil(diffMs / (1000 * 60 * 60 * 24)); /* перевод миллисекунд в дни */
     }
 
@@ -179,4 +214,27 @@
 
         editIndex = null;
         modalButton.textContent = 'Добавить';
+    }
+
+    /* сортировка */
+    function sortTasks(field) {
+        if (field == 'price') {
+            tasks.sort((a, b) => {
+                return (Number(a.price) - Number(b.price)) * sortDir;
+            });
+        }
+
+        if (sortField === field) { /* если сортировка уже установлена... */
+            sortDir *= -1; /* ...она устанавливается по убыванию */
+        } else {
+            sortField = field; /* присвоение сортировки по новому признаку */
+            sortDir = 1;
+        }
+
+        tasks.sort((a,b) => {
+            if (a[field] > b[field]) return 1 * sortDir;
+            if (a[field] < b[field]) return -1 * sortDir;
+        });
+
+        renderTasks();
     }

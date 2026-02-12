@@ -68,11 +68,20 @@ table {
     border: 1px solid black;
 }
 
+th:active, th:hover {
+    color: blue;
+}
+
 th, td {
     border: black 1px solid;
     padding-left: 2.5vw;
     padding-right: 2.5vw;
     text-align: center;
+}
+
+table, th, td {
+    border-top: none;
+    border-bottom: none;
 }
 
 /*Модальное окно*/
@@ -100,7 +109,7 @@ th, td {
     position: relative;
 }
 
-#modal-window input, select {
+#modal-window input, select, nav input {
     height: 30px;
     width: 500px;
 }
