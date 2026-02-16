@@ -21,13 +21,14 @@
     const orderTable = document.getElementById('orderTable');
     const deviceInput = document.getElementById('deviceInput')
     const modelInput = document.getElementById('modelInput');
+    const statusSelect = document.getElementById('statusSelect');
     const statusInput = document.getElementById('statusInput');
     const crushInput = document.getElementById('crushInput');
     const priceInput = document.getElementById('priceInput');
     const noteInput = document.getElementById('noteInput');
     const workerInput = document.getElementById('workerInput');
-    const dateBeginInput = document.getElementById('dateBeginInput');
     const dateInput = document.getElementById('dateInput');
+    const deadline = document.getElementById('deadline');
 
     /* Локальная память */
     let tasks = JSON.parse(localStorage.getItem("tasks")) || []; /* берёт данные браузера, если нет - создаёт новые */
@@ -47,11 +48,10 @@
         else if (crushInput.value == '') alert('Поле "Неисправность" не может быть пустым');
         else if (priceInput.value == '') alert ('Поле "Цена" не может быть пустым');
         else if (workerInput.value == '') alert ('Поле "Исполнитель" не может быть пустым');
-        else if (dateBeginInput.value == '') alert ('Поле "Дата приёма" не может быть пустым');
         else if (dateInput.value == '') alert ('Поле "Дата выдачи" не может быть пустым');
-        else if (modelInput.value.length > 50) alert ('Поле "Модель" не может содержать больше 50 символов');
-        else if (crushInput.value.length > 200) alert ('Поле "Неисправность" не может содержать больше 200 символов');
-        else if (priceInput.value > 8) alert ('Ремонт не может стоить дороже 99999999 рублей');
+        else if (modelInput.value.length > 25) alert ('Поле "Модель" не может содержать больше 25 символов');
+        else if (crushInput.value.length > 35) alert ('Поле "Неисправность" не может содержать больше 35 символов');
+        /*else if (priceInput.value > 9) alert ('Ремонт не может стоить дороже 99999999 рублей');*/
         else if (workerInput.value > 20) alert ('Поле "Исполнитель" не может содержать больше 20 символов');
         else addTask(); /* сохранение в локал */
 
@@ -66,7 +66,7 @@
     document.getElementById('bugHead').onclick = () => sortTasks('crush');
     document.getElementById('priceHead').onclick = () => sortTasks('price');
     document.getElementById('workerHead').onclick = () => sortTasks('worker');
-    document.getElementById('dateBeginHead').oncancel = () => sortTasks('beginDate');
+    document.getElementById('dateBeginHead').onclick = () => sortTasks('beginDate');
     document.getElementById('dateHead').onclick = () => sortTasks('acceptDate');
 
     /******** ФУНКЦИИ *********/
@@ -86,7 +86,6 @@
             price: priceInput.value,
             note: noteSecurity,
             worker: workerSecurity,
-            beginDate: dateBeginInput.value,
             acceptDate: dateInput.value
         };
 
@@ -118,21 +117,28 @@
         tasks.forEach((task, index) => {
             check = true;
             checkSearch = false;
-            if (complete.value == 'Активные' && task.status == 'Сделан' ||
-                 complete.value == 'Выполненные' && (task.status == 'В работе' || task.status == 'Не сделан')) check = false;
+            repSearch = escapeHTML(search.value);
+            if (complete.value == 'Принят' && task.status != 'Принят' ||
+                complete.value == 'В работе' && task.status != 'В работе' ||
+                complete.value == 'Ждёт запчастей' && task.status != 'Ждёт запчастей' ||
+                complete.value == 'На согласовании' && task.status != 'На согласовании' ||
+                complete.value == 'Без ремонта' && task.status != 'Без ремонта' ||
+                complete.value == 'Сделан' && task.status != 'Сделан' ||
+                complete.value == 'Отменён' && task.status != 'Отменён') check = false;
             if (search.value == '') checkSearch = true;
-            else if (task.model.includes(search.value) || task.crush.includes(search.value) || task.price.includes(search.value) || task.worker.includes(search.value)) checkSearch = true;
+            else if (task.model.includes(repSearch) || task.crush.includes(repSearch) || task.price.includes(repSearch) || task.worker.includes(repSearch)) checkSearch = true;
             if (check && checkSearch) {
                 const tr = document.createElement('tr'); /* создание строки таблицы */
                 const daysLeft = calcDays(task.acceptDate);
+                /*statusSelect.value = task.status;*/
                 tr.innerHTML = /* создание ячеек */ `
-                <td>${index + 1}</td>
-                <td>${task.model}</td>
-                <td>${task.status}</td>
-                <td>${task.crush}</td>
-                <td>${task.price}</td>
-                <td>${task.worker}</td>
-                <td>${formattedDate(task.acceptDate)}</td>
+                <td class="tdNumber">${index + 1}</td>
+                <td class="tdModel">${task.model}</td>
+                <td class="tdStatus">${task.status}</td>
+                <td class="tdBug">${task.crush}</td>
+                <td class="tdPrice">${task.price}</td>
+                <td class="tdWorker">${task.worker}</td>
+                <td class="tdBegin">${formattedDate(task.acceptDate)}</td>
                 <td class="days-cell">${daysLeft} дн.</td>
                 <td>
                     <button onclick="editTask(${index})">📝</button>
@@ -146,7 +152,15 @@
                 tbody.appendChild(tr); /* закрывающий аргумент строки таблицы */
             }
         });
-
+                /*<select id='statusSelect'>
+                    <option>Принят</option>
+                    <option>В работе</option>
+                    <option>Ждёт запчастей</option>
+                    <option>На согласовании</option>
+                    <option>Без ремонта</option>
+                    <option>Cделан</option>
+                    <option>Отменён</option>
+                </select>*/
     }
 
     /* редактирование задачи */
@@ -154,15 +168,20 @@
         /* импорт из массива в редактирование */
         const task = tasks[index];
 
+        modelSecurity = returnHTML(task.model);
+        crushSecurity = returnHTML(task.crush);
+        workerSecurity = returnHTML(task.worker);
+        noteSecurity = returnHTML(task.note);
+
         deviceInput.value = task.device;
-        modelInput.value = task.model;
+        modelInput.value = modelSecurity;
         statusInput.value = task.status;
-        crushInput.value = task.crush;
+        crushInput.value = crushSecurity;
         priceInput.value = task.price;
-        noteInput.value = task.note;
-        workerInput.value = task.worker;
-        dateBeginInput.value = task.beginDate;
+        noteInput.value = noteSecurity;
+        workerInput.value = workerSecurity;
         dateInput.value = task.acceptDate;
+        deadline.value = task.deadline;
 
         editIndex = index;  /* переключение на режим редактирования */;
         modalButton.textContent = "Сохранить"; /* изменение текста кнопки */;
@@ -198,7 +217,16 @@
           .replace(/>/g, '&gt;')
           .replace(/"/g, '&quot;')
           .replace(/'/g, '&#039;');
-      }
+    }
+
+    function returnHTML(str) {
+        return str
+          .replace(/&amp;/g, '&')
+          .replace(/&lt;/g, '<')
+          .replace(/&gt;/g, '>')
+          .replace(/&quot;/g, '"')
+          .replace(/&#039;/g, "'");
+    }
 
     /* очистка форм */
     function clearForm() {
@@ -209,7 +237,6 @@
         priceInput.value = '';
         noteInput.value = '';
         workerInput.value = '';
-        dateBeginInput.value = '';
         dateInput.value = '';
 
         editIndex = null;

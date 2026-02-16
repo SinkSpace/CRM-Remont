@@ -24,15 +24,20 @@
         <h2>Список заказов</h2>
         <select id="filter">
             <option>Все</option>
-            <option>Активные</option>
-            <option>Выполненные</option>
+            <option>Принят</option>
+            <option>В работе</option>
+            <option>Ждёт запчастей</option>
+            <option>На согласовании</option>
+            <option>Без ремонта</option>
+            <option>Cделан</option>
+            <option>Отменён</option>
         </select>
         <button id="addOrder">Добавить заказ</button>
     </header>
     <main>
         <table id="orderTable">
             <thead><tr>
-                <th id="numberHead">Номер</th>
+                <th id="numberHead">№</th>
                 <th id="modelHead">Модель</th>
                 <th id="statusHead">Статус</th>
                 <th id="bugHead">Неисправность</th>
@@ -68,15 +73,19 @@
                 </select></section>
                 <section><p>Марка и модель</p> <input id="modelInput"></section></div>
                 <p>Статус</p> <select id="statusInput">
-                    <option>Сделан</option>
+                    <option>Принят</option>
                     <option>В работе</option>
-                    <option>Не сделан</option>
+                    <option>Ждёт запчастей</option>
+                    <option>На согласовании</option>
+                    <option>Без ремонта</option>
+                    <option>Cделан</option>
+                    <option>Отменён</option>
                 </select>
                 <p>Неисправность</p> <input id="crushInput">
                 <p>Стоимость ремонта</p> <input type="number" id="priceInput">
                 <p>Исполнитель</p> <input id="workerInput">
                 <p>Примечание</p> <input id="noteInput">
-                <div id="dateDiv"><section><p>Дата приёма</p> <input type="date" id="dateBeginInput"></section>
+                <div id="dateDiv"><section><p>Дней на ремонт</p> <input type="number" id="deadline"></section>
                 <section><p>Дата выдачи</p> <input type="date" id="dateInput"></section></div>
                 <p><button id="modal-button">Добавить</button></p>
             </div>

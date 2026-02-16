@@ -66,6 +66,7 @@ main {
 table {
     border-collapse: collapse;
     border: 1px solid black;
+    max-width: 100vw;
 }
 
 th:active, th:hover {
@@ -82,6 +83,24 @@ th, td {
 table, th, td {
     border-top: none;
     border-bottom: none;
+}
+
+#statusSelect {
+    width: 120px;
+    font-size: 12px;
+}
+
+/* Ячейки заголовка таблицы */
+#numberHead, .tdNumber, #modelHead, .tdModel, #statusHead, .tdStatus, #bugHead, .tdBug, #priceHead, .tdPrice, #workerHead, .tdWorker, #dateBeginHead, .tdBegin, #dateHead, .days-cell  {
+    padding: 10px;
+}
+
+#bugHead, .tdBug {
+    max-width: 480px;
+}
+
+#modelHead, .tdModel {
+    max-width: 360px;
 }
 
 /*Модальное окно*/
@@ -144,7 +163,7 @@ table, th, td {
     justify-content: space-between;
 }
 
-#dateBeginInput, #dateInput {
+#dateInput, #deadline {
     width: 200px !important;
 }
 
