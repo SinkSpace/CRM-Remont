@@ -1,7 +1,8 @@
     let editIndex = null; /* переключатель режима редактирования */
     let sortField = null; /* поле сортировки */
     let sortDir = 1; /* сортировка по возрастанию или убыванию */
-    
+    let oldVisual = null;
+
     /* Модальное окно */
     const closeButton = document.getElementById('closeButton'); /* взаимодействие с кнопкой закрытия */
     const modal = document.getElementById('modal'); /* взаимодействие с модальным окном */
@@ -39,10 +40,6 @@
         renderTasks(); /* обработка памяти */
     });
 
-    tasks.forEach(task => {
-        console.log(task.model, task.acceptDate);
-    });
-
     modalButton.onclick = () => {
         if (modelInput.value == '') alert('Поле "Модель" не может быть пустым');
         else if (crushInput.value == '') alert('Поле "Неисправность" не может быть пустым');
@@ -61,13 +58,14 @@
     }
 
     /* сортировка */
-    document.getElementById('modelHead').onclick = () => sortTasks('model');
-    document.getElementById('statusHead').onclick = () => sortTasks('status');
-    document.getElementById('bugHead').onclick = () => sortTasks('crush');
-    document.getElementById('priceHead').onclick = () => sortTasks('price');
-    document.getElementById('workerHead').onclick = () => sortTasks('worker');
-    document.getElementById('dateBeginHead').onclick = () => sortTasks('beginDate');
-    document.getElementById('dateHead').onclick = () => sortTasks('acceptDate');
+    document.getElementById('numberHead').onclick = () => sortTasks('number', document.getElementById('numberHead'));
+    document.getElementById('modelHead').onclick = () => sortTasks('model', document.getElementById('modelHead'));
+    document.getElementById('statusHead').onclick = () => sortTasks('status', document.getElementById('statusHead'));
+    document.getElementById('bugHead').onclick = () => sortTasks('crush', document.getElementById('bugHead'));
+    document.getElementById('priceHead').onclick = () => sortTasks('price', document.getElementById('priceHead'));
+    document.getElementById('workerHead').onclick = () => sortTasks('worker', document.getElementById('workerHead'));
+    document.getElementById('dateBeginHead').onclick = () => sortTasks('acceptDate', document.getElementById('dateBeginHead'));
+    document.getElementById('dateHead').onclick = () => sortTasks('acceptDate', document.getElementById('dateHead'));
 
     /******** ФУНКЦИИ *********/
 
@@ -134,7 +132,15 @@
                 tr.innerHTML = /* создание ячеек */ `
                 <td class="tdNumber">${index + 1}</td>
                 <td class="tdModel">${task.model}</td>
-                <td class="tdStatus">${task.status}</td>
+                <td class="tdStatus"><select class="statusInput">
+                    <option ${task.status === 'Принят' ? 'selected' : ''}>Принят</option>
+                    <option ${task.status === 'В работе' ? 'selected' : ''}>В работе</option>
+                    <option ${task.status === 'Ждёт запчастей' ? 'selected' : ''}>Ждёт запчастей</option>
+                    <option ${task.status === 'На согласовании' ? 'selected' : ''}>На согласовании</option>
+                    <option ${task.status === 'Без ремонта' ? 'selected' : ''}>Без ремонта</option>
+                    <option ${task.status === 'Сделан' ? 'selected' : ''}>Cделан</option>
+                    <option ${task.status === 'Отменён' ? 'selected' : ''}>Отменён</option>
+                </select></td>
                 <td class="tdBug">${task.crush}</td>
                 <td class="tdPrice">${task.price}</td>
                 <td class="tdWorker">${task.worker}</td>
@@ -149,18 +155,16 @@
                     tr.querySelector('.days-cell').style.color = "red"; /* выбор текущего сектора */
                 }
 
+                const select = tr.querySelector('.statusInput');
+                select.addEventListener('change', function () {
+                    tasks[index].status = this.value;
+                    localStorage.setItem("tasks", JSON.stringify(tasks));
+                    renderTasks();
+                });
+
                 tbody.appendChild(tr); /* закрывающий аргумент строки таблицы */
             }
         });
-                /*<select id='statusSelect'>
-                    <option>Принят</option>
-                    <option>В работе</option>
-                    <option>Ждёт запчастей</option>
-                    <option>На согласовании</option>
-                    <option>Без ремонта</option>
-                    <option>Cделан</option>
-                    <option>Отменён</option>
-                </select>*/
     }
 
     /* редактирование задачи */
@@ -244,24 +248,32 @@
     }
 
     /* сортировка */
-    function sortTasks(field) {
-        if (field == 'price') {
-            tasks.sort((a, b) => {
-                return (Number(a.price) - Number(b.price)) * sortDir;
-            });
+    function sortTasks(field, visual) {
+        if (field == 'number') {
+            sortField = null;
         }
 
-        if (sortField === field) { /* если сортировка уже установлена... */
-            sortDir *= -1; /* ...она устанавливается по убыванию */
-        } else {
-            sortField = field; /* присвоение сортировки по новому признаку */
-            sortDir = 1;
+        if (oldVisual) {
+            oldVisual.textContent = oldVisual.textContent.replace('⬇️', '');
+            oldVisual.textContent = oldVisual.textContent.replace('⬆️', '');
         }
+
+        sortDir *= -1;
+
+        if (sortDir != 1 || visual != oldVisual) visual.textContent += '⬇️'; 
+        else if (sortDir == 1) visual.textContent += '⬆️';
 
         tasks.sort((a,b) => {
-            if (a[field] > b[field]) return 1 * sortDir;
-            if (a[field] < b[field]) return -1 * sortDir;
+            if (a[field] > b[field]) return 1 * sortDir; /* */
+            if (a[field] < b[field]) return -1 * sortDir; /* */
         });
+
+        if (field == 'price')
+            tasks.sort((a, b) => {
+                return (Number(a.price) - Number(b.price)) * sortDir; /* */
+            });
+
+        oldVisual = visual;
 
         renderTasks();
     }

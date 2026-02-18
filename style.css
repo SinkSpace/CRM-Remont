@@ -85,9 +85,14 @@ table, th, td {
     border-bottom: none;
 }
 
-#statusSelect {
-    width: 120px;
+.statusInput {
+    width: 117px;
     font-size: 12px;
+}
+
+#filter {
+    width: 150px;
+    height: 35px;
 }
 
 /* Ячейки заголовка таблицы */
