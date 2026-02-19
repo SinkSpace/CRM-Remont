@@ -1,3 +1,7 @@
+* {
+    box-sizing: border-box;
+}
+
 body {
     margin: 0;
     padding: 0;
@@ -58,57 +62,85 @@ header button {
     border-radius: 10px;
 }
 
+#search {
+    border-radius: 10px 0px 0px 10px;
+    border: 0px;
+}
+
 main {
     display: flex;
     justify-content: center;
 }
 
-table {
+article {
     border-collapse: collapse;
-    border: 1px solid black;
+    border: 0.5px solid black;
     max-width: 100vw;
 }
 
-th:active, th:hover {
+#mainHead {
+    display: flex;
+    justify-content: space-between;
+}
+
+#mainHead div:active, #mainHead div:hover {
     color: blue;
 }
 
-th, td {
+#mainHead div, .mainTable div {
     border: black 1px solid;
-    padding-left: 2.5vw;
-    padding-right: 2.5vw;
     text-align: center;
 }
 
-table, th, td {
+article, #mainHead div, .mainTable div {
     border-top: none;
     border-bottom: none;
+}
+
+.mainTable,
+#mainHead {
+    display: flex;
+}
+
+.mainTable div,
+#mainHead div {
+    flex-shrink: 0;
 }
 
 .statusInput {
     width: 117px;
     font-size: 12px;
+    border: 0px;
 }
 
 #filter {
     width: 150px;
     height: 35px;
+    border-radius: 0px 10px 10px 0px;
+    border: 0px;
 }
 
 /* Ячейки заголовка таблицы */
-#numberHead, .tdNumber, #modelHead, .tdModel, #statusHead, .tdStatus, #bugHead, .tdBug, #priceHead, .tdPrice, #workerHead, .tdWorker, #dateBeginHead, .tdBegin, #dateHead, .days-cell  {
+#numberHead, .tdNumber, #modelHead, .tdModel, #statusHead, .tdStatus, #bugHead, .tdBug, #priceHead, .tdPrice, #workerHead, .tdWorker, #dateBeginHead, .tdBegin, #dateHead, .days-cell, #editHead, .tdEdit  {
     padding: 10px;
 }
 
-#bugHead, .tdBug {
-    max-width: 480px;
+#mainHead,
+.mainTable {
+    display: grid;
+    grid-template-columns:
+        3vw
+        23.854vw
+        8.958vw
+        28.385vw
+        5.781vw
+        8.385vw
+        6.25vw
+        8.469vw
+        6.844vw;
 }
 
-#modelHead, .tdModel {
-    max-width: 360px;
-}
-
-/*Модальное окно*/
+/* Модальное окно */
 
 #modal {
     display: none; /*не отображать по умолчанию */
@@ -131,11 +163,17 @@ table, th, td {
     justify-content: center;
     align-items: center;
     position: relative;
+    /*background-color: #333333;*/
+}
+
+#modal-content p {
+    /*color: white;*/
 }
 
 #modal-window input, select, nav input {
-    height: 30px;
+    height: 35px;
     width: 500px;
+    /*border: 0px;*/
 }
 
 #modal-button {
@@ -157,7 +195,7 @@ table, th, td {
     height: 15px;
 }
 
-#noTask {
+#noTask, #noSearch, #JSc {
     width: 100vw;
     text-align: center;
     visibility: hidden;

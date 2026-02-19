@@ -2,6 +2,7 @@
     let sortField = null; /* поле сортировки */
     let sortDir = 1; /* сортировка по возрастанию или убыванию */
     let oldVisual = null;
+    let isSyncling = false; /* синхронизация дат */
 
     /* Модальное окно */
     const closeButton = document.getElementById('closeButton'); /* взаимодействие с кнопкой закрытия */
@@ -31,6 +32,40 @@
     const dateInput = document.getElementById('dateInput');
     const deadline = document.getElementById('deadline');
 
+    deadline.addEventListener('input', function () {
+        if (isSyncling) return;
+
+        const days = parseInt(this.value);
+        if (isNaN(days)) return;
+
+        isSyncling = true;
+
+        const today = new Date();
+        today.setHours(0,0,0,0);
+        today.setDate(today.getDate() + days);
+
+        dateInput.value = today.toISOString().split('T')[0];
+
+        isSyncling = false;
+    });
+
+    dateInput.addEventListener('input', function () {
+        if (isSyncling) return;
+        if (!this.value) return;
+
+        isSyncling = true;
+
+        const end = new Date(this.value);
+        end.setHours(0,0,0,0);
+
+        const today = new Date();
+        today.setHours(0,0,0,0);
+
+        deadline.value = Math.ceil((end - today) / (1000 * 60 * 60 * 24));
+
+        isSyncling = false;
+    });
+
     /* Локальная память */
     let tasks = JSON.parse(localStorage.getItem("tasks")) || []; /* берёт данные браузера, если нет - создаёт новые */
 
@@ -45,9 +80,9 @@
         else if (crushInput.value == '') alert('Поле "Неисправность" не может быть пустым');
         else if (priceInput.value == '') alert ('Поле "Цена" не может быть пустым');
         else if (workerInput.value == '') alert ('Поле "Исполнитель" не может быть пустым');
-        else if (dateInput.value == '') alert ('Поле "Дата выдачи" не может быть пустым');
+        /*else if (dateInput.value == '') alert ('Поле "Дата выдачи" не может быть пустым');*/
         else if (modelInput.value.length > 25) alert ('Поле "Модель" не может содержать больше 25 символов');
-        else if (crushInput.value.length > 35) alert ('Поле "Неисправность" не может содержать больше 35 символов');
+        else if (crushInput.value.length > 50) alert ('Поле "Неисправность" не может содержать больше 50 символов');
         /*else if (priceInput.value > 9) alert ('Ремонт не может стоить дороже 99999999 рублей');*/
         else if (workerInput.value > 20) alert ('Поле "Исполнитель" не может содержать больше 20 символов');
         else addTask(); /* сохранение в локал */
@@ -58,7 +93,7 @@
     }
 
     /* сортировка */
-    document.getElementById('numberHead').onclick = () => sortTasks('number', document.getElementById('numberHead'));
+    /*document.getElementById('numberHead').onclick = () => sortTasks('number', document.getElementById('numberHead'));*/
     document.getElementById('modelHead').onclick = () => sortTasks('model', document.getElementById('modelHead'));
     document.getElementById('statusHead').onclick = () => sortTasks('status', document.getElementById('statusHead'));
     document.getElementById('bugHead').onclick = () => sortTasks('crush', document.getElementById('bugHead'));
@@ -84,7 +119,8 @@
             price: priceInput.value,
             note: noteSecurity,
             worker: workerSecurity,
-            acceptDate: dateInput.value
+            acceptDate: dateInput.value,
+            deadline: dateInput.value
         };
 
         if (editIndex == null) {
@@ -100,9 +136,6 @@
 
     /* обработка памяти */
     function renderTasks() { 
-        const tbody = orderTable.querySelector("tbody"); /* выбор первого элемента таблицы на странице */
-        tbody.innerHTML = ''; /* enter для читаемости */
-
         if (tasks.length === 0) {
             orderTable.style.visibility = "hidden";
             document.getElementById('noTask').style.visibility = "visible";
@@ -111,6 +144,11 @@
 
         orderTable.style.visibility = "visible";
         document.getElementById('noTask').style.visibility = "hidden";
+
+        const table = document.getElementById('orderTable');
+
+        /* удаляем все строки кроме заголовка */
+        table.querySelectorAll('.mainTable').forEach(row => row.remove());
 
         tasks.forEach((task, index) => {
             check = true;
@@ -126,13 +164,14 @@
             if (search.value == '') checkSearch = true;
             else if (task.model.includes(repSearch) || task.crush.includes(repSearch) || task.price.includes(repSearch) || task.worker.includes(repSearch)) checkSearch = true;
             if (check && checkSearch) {
-                const tr = document.createElement('tr'); /* создание строки таблицы */
-                const daysLeft = calcDays(task.acceptDate);
-                /*statusSelect.value = task.status;*/
+                document.getElementById('noSearch').style.visibility = "hidden";
+                const tr = document.createElement('section'); /* создание строки таблицы */
+                tr.classList.add('mainTable');
+                const daysLeft = calcDays(task.deadline);
                 tr.innerHTML = /* создание ячеек */ `
-                <td class="tdNumber">${index + 1}</td>
-                <td class="tdModel">${task.model}</td>
-                <td class="tdStatus"><select class="statusInput">
+                <div class="tdNumber">${index + 1}</div>
+                <div class="tdModel">${task.model}</div>
+                <div class="tdStatus"><select class="statusInput">
                     <option ${task.status === 'Принят' ? 'selected' : ''}>Принят</option>
                     <option ${task.status === 'В работе' ? 'selected' : ''}>В работе</option>
                     <option ${task.status === 'Ждёт запчастей' ? 'selected' : ''}>Ждёт запчастей</option>
@@ -140,16 +179,17 @@
                     <option ${task.status === 'Без ремонта' ? 'selected' : ''}>Без ремонта</option>
                     <option ${task.status === 'Сделан' ? 'selected' : ''}>Cделан</option>
                     <option ${task.status === 'Отменён' ? 'selected' : ''}>Отменён</option>
-                </select></td>
-                <td class="tdBug">${task.crush}</td>
-                <td class="tdPrice">${task.price}</td>
-                <td class="tdWorker">${task.worker}</td>
-                <td class="tdBegin">${formattedDate(task.acceptDate)}</td>
-                <td class="days-cell">${daysLeft} дн.</td>
-                <td>
+                </select></div>
+                <div class="tdBug">${task.crush}</div>
+                <div class="tdPrice">${task.price}</div>
+                <div class="tdWorker">${task.worker}</div>
+                <div class="tdBegin">${formattedDate(task.acceptDate)}</div>
+                <div class="days-cell">${daysLeft} дн.</div>
+                <div class="tdEdit">
                     <button onclick="editTask(${index})">📝</button>
                     <button onclick="deleteTask(${index})">❌</button>
-                </td>`;
+                </div>
+                `;
 
                 if (daysLeft < 0) {
                     tr.querySelector('.days-cell').style.color = "red"; /* выбор текущего сектора */
@@ -162,7 +202,10 @@
                     renderTasks();
                 });
 
-                tbody.appendChild(tr); /* закрывающий аргумент строки таблицы */
+                document.getElementById('orderTable').appendChild(tr); /* закрывающий аргумент строки таблицы */
+            } else {
+                orderTable.style.visibility = "hidden";
+                document.getElementById('noSearch').style.visibility = "visible";
             }
         });
     }
@@ -185,7 +228,7 @@
         noteInput.value = noteSecurity;
         workerInput.value = workerSecurity;
         dateInput.value = task.acceptDate;
-        deadline.value = task.deadline;
+        deadline.value = calcDays(task.deadline);
 
         editIndex = index;  /* переключение на режим редактирования */;
         modalButton.textContent = "Сохранить"; /* изменение текста кнопки */;
@@ -194,23 +237,33 @@
 
     /* удаление задачи */
     function deleteTask(index) {
+        if (confirm("Удалить?")) {
         tasks.splice(index, 1); /* вырез элемента */
         localStorage.setItem("tasks", JSON.stringify(tasks));
-        renderTasks(); /* перезагрузка таблицы */
+        renderTasks(); /* перезагрузка таблицы */ }
+    }
+
+    /* очистка даты */
+    function normalize(date) {
+        date.setHours(0,0,0,0);
+        return date;
     }
 
     function calcDays(dateString) {
-        const acceptDate = new Date(dateString); /* дата из инпута */
-        const today = new Date(); /* текущая дата */
-        const diffMs = acceptDate - today; /* вычитание дат */
-        if (diffMs < 0) redInfo = true; else redInfo = false;
-        return Math.ceil(diffMs / (1000 * 60 * 60 * 24)); /* перевод миллисекунд в дни */
+        if (!dateString || !dateString.includes('-')) return '';
+        const end = normalize(new Date(dateString));
+        const today = normalize(new Date());
+        const diffMs = end - today;
+        return Math.ceil(diffMs / (1000 * 60 * 60 * 24));
     }
 
     function formattedDate(dateString) {
-        const rawDate = dateString;
-        const parts = rawDate.split('-'); /* разбор составных частей даты */
-        return `${parts[2]}.${parts[1]}.${parts[0]}`; /* изменение формата даты */
+        if (!dateString) return '';
+
+        const parts = dateString.split('-');
+        if (parts.length !== 3) return '';
+
+        return `${parts[2]}.${parts[1]}.${parts[0]}`;
     }
 
     /* HTML-инъекция */
@@ -241,6 +294,7 @@
         priceInput.value = '';
         noteInput.value = '';
         workerInput.value = '';
+        deadline.value = '';
         dateInput.value = '';
 
         editIndex = null;
@@ -277,3 +331,5 @@
 
         renderTasks();
     }
+
+    /*JSWork = false;*/

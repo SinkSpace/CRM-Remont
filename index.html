@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="style.css">
     <title>CRM</title>
+    <!--<script>let JSwork = false;</script>-->
 </head>
 <body>
     <nav class="parent">
@@ -13,7 +14,7 @@
             <h1>CRM</h1>
         </div>
         <div>
-            <input id="search" placeholder="                                                                                                                                  🔍">
+            <input id="search" placeholder="                                                                                                                                🔍">
             <select id="filter">
             <option>Все статусы</option>
             <option>Принят</option>
@@ -21,7 +22,7 @@
             <option>Ждёт запчастей</option>
             <option>На согласовании</option>
             <option>Без ремонта</option>
-            <option>Cделан</option>
+            <option>Сделан</option>
             <option>Отменён</option>
         </select>
         </div>
@@ -31,29 +32,29 @@
         </div>
     </nav>
     <header class="parent">
+        <button style="visibility: hidden;">Добавить заказ</button>
         <h2>Список заказов</h2>
         <button id="addOrder">Добавить заказ</button>
     </header>
     <main>
-        <table id="orderTable">
-            <thead><tr>
-                <th id="numberHead">№</th>
-                <th id="modelHead">Модель</th>
-                <th id="statusHead">Статус</th>
-                <th id="bugHead">Неисправность</th>
-                <th id="priceHead">Цена</th>
-                <th id="workerHead">Исполнитель</th>
-                <th id="dateBeginHead">Выдача</th>
-                <th id="dateHead">До выдачи</th>
-                <th>Действия</th>
-            </tr></thead>
-
-            <tbody>
+        <article id="orderTable">
+            <section id="mainHead">
+                <div id="numberHead">№</div>
+                <div id="modelHead">Модель</div>
+                <div id="statusHead">Статус</div>
+                <div id="bugHead">Неисправность</div>
+                <div id="priceHead">Цена</div>
+                <div id="workerHead">Исполнитель</div>
+                <div id="dateBeginHead">Выдача</div>
+                <div id="dateHead">До выдачи</div>
+                <div id="editHead">Действия</div>
+            </section>
                 <!-- заполняется из localstorage -->
-            </tbody>
-        </table>
+        </article>
     </main>
     <p><h1 id="noTask">Активных задач нет</h1></p>
+    <p><h1 id="noSearch">Задачи не найдены</h1></p>
+    <p><h1 id="JSc" style="visibility: hidden;">Console Error</h1></p>
     <div id="modal"> <!--Модальное окно-->
         <div id="modal-window">
             <img id="closeButton" src="close.svg"></img>
@@ -78,7 +79,7 @@
                     <option>Ждёт запчастей</option>
                     <option>На согласовании</option>
                     <option>Без ремонта</option>
-                    <option>Cделан</option>
+                    <option>Сделан</option>
                     <option>Отменён</option>
                 </select>
                 <p>Неисправность</p> <input id="crushInput">
@@ -93,4 +94,5 @@
     </div>
 </body>
 <script src="script.js"></script>
+<!--<script>if (JSwork) {document.getElementById('JSc').style.visibility = "visible";};</script>-->
 </html>
