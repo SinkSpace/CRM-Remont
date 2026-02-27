@@ -214,6 +214,24 @@
                 <button onclick="deleteTask(${task.id})">❌</button>
             </div>
             `;
+/*
+            const select = tr.querySelector('.statusInput');
+
+            select.addEventListener('change', function () {
+                const newStatus = this.value;
+
+                fetch(`http://localhost:3000/orders/${task.id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        ...task,
+                        status: newStatus
+                    })
+                })
+                .then(res => res.json())
+                .then(() => loadTasks())
+                .catch(err => console.error('Ошибка обновления статуса:', err));
+            });*/
 
             if (daysLeft < 0) tr.querySelector('.days-cell').style.color = "red"; /* выбор текущего сектора */
 

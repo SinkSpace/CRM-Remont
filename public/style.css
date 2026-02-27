@@ -1,5 +1,6 @@
 * {
     box-sizing: border-box;
+    overflow-x: hidden;
 }
 
 body {
@@ -67,6 +68,10 @@ header button {
     border: 0px;
 }
 
+#search::placeholder {
+    text-align: right;
+}
+
 main {
     display: flex;
     justify-content: center;
@@ -105,8 +110,18 @@ main {
 }
 
 /* Ячейки заголовка таблицы */
-#numberHead, .tdNumber, #modelHead, .tdModel, #statusHead, .tdStatus, #bugHead, .tdBug, #priceHead, .tdPrice, #workerHead, .tdWorker, #dateBeginHead, .tdBegin, #dateHead, .days-cell, #editHead, .tdEdit  {
+#numberHead, .tdNumber, #modelHead, .tdModel, #statusHead, .tdStatus, #bugHead, .tdBug, #priceHead, .tdPrice, #workerHead, .tdWorker, #dateBeginHead, .tdBegin, #dateHead, .days-cell  {
     padding: 10px;
+    display: flex;
+    justify-content: center;
+}
+
+#editHead, .tdEdit {
+    padding: 10px;
+}
+
+.tdStatus {
+    text-align: center;
 }
 
 #mainHead,
@@ -150,8 +165,7 @@ main {
 
 #modal-window input, select, nav input {
     height: 35px;
-    width: 500px;
-    /*border: 0px;*/
+    width: 32vw;
 }
 
 #modal-button {
@@ -188,6 +202,6 @@ main {
     width: 200px !important;
 }
 
-#deviceInput, #modelInput {
-    width: 220px !important;
+#deviceInput, #modelInput, #dateInput, #deadline {
+    width: 15vw !important;
 }

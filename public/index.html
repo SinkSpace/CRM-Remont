@@ -5,16 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="light.css" id="data-theme">
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="mobile.css">
     <title>CRM</title>
 </head>
 <body>
     <nav class="parent">
-        <div class="parent">
+        <div class="parent" id="headName">
             <img alt="Меню" src="menu.svg">
             <h1>CRM</h1>
         </div>
         <div>
-            <input id="search" placeholder="                                                                                                                                🔍">
+            <input id="search" placeholder="🔍">
             <select id="filter">
             <option>Все статусы</option>
             <option>Принят</option>
@@ -26,7 +27,7 @@
             <option>Отменён</option>
         </select>
         </div>
-        <div>
+        <div id="nameShop">
             <p style="color: white;">example@example.ru</p>
             <p style="color: gray;">Магазин "Пример"</p>
         </div>
