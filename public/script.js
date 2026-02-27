@@ -3,6 +3,12 @@
     let sortDir = 1; /* сортировка по возрастанию или убыванию */
     let oldVisual = null;
     let isSyncling = false; /* синхронизация дат */
+    let link = document.getElementById('data-theme');
+
+    const change = document.getElementById('change');
+    const isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+    if (isDark) themeChange();
 
     /* Модальное окно */
     const closeButton = document.getElementById('closeButton'); /* взаимодействие с кнопкой закрытия */
@@ -67,12 +73,12 @@
     });
 
     /* Локальная память */
-    let tasks = JSON.parse(localStorage.getItem("tasks")) || []; /* берёт данные браузера, если нет - создаёт новые */
+    let tasks = [];
 
     complete.addEventListener('change', function(event) { renderTasks() });
-    search.addEventListener('change', function(event) {renderTasks()});
+    search.addEventListener('input', renderTasks);
     document.addEventListener('DOMContentLoaded', () => { /* загрузка страницы */
-        renderTasks(); /* обработка памяти */
+        loadTasks(); /* обработка памяти */
     });
 
     modalButton.onclick = () => {
@@ -80,15 +86,18 @@
         else if (crushInput.value == '') alert('Поле "Неисправность" не может быть пустым');
         else if (priceInput.value == '') alert ('Поле "Цена" не может быть пустым');
         else if (workerInput.value == '') alert ('Поле "Исполнитель" не может быть пустым');
-        /*else if (dateInput.value == '') alert ('Поле "Дата выдачи" не может быть пустым');*/
         else if (modelInput.value.length > 25) alert ('Поле "Модель" не может содержать больше 25 символов');
         else if (crushInput.value.length > 50) alert ('Поле "Неисправность" не может содержать больше 50 символов');
-        /*else if (priceInput.value > 9) alert ('Ремонт не может стоить дороже 99999999 рублей');*/
-        else if (workerInput.value > 20) alert ('Поле "Исполнитель" не может содержать больше 20 символов');
-        else addTask(); /* сохранение в локал */
+        else if (workerInput.value.length > 20) alert ('Поле "Исполнитель" не может содержать больше 20 символов');
+        else if (editIndex !== null) {
+            updateTask(editIndex);
+        }
+        else {
+            addTask();
+        };
 
         clearForm();
-        renderTasks(); /* обработка памяти */
+        /*renderTasks(); /* обработка памяти */
         modal.style.display = 'none'; /* закрытие окна */
     }
 
@@ -112,6 +121,7 @@
         noteSecurity = escapeHTML(noteInput.value);
 
         const task = { /* характеристики добавления в память */
+            id: Date.now(),
             device: deviceInput.value,
             model: modelSecurity,
             status: statusInput.value,
@@ -123,97 +133,99 @@
             deadline: dateInput.value
         };
 
-        if (editIndex == null) {
-            tasks.push(task); /* добавление МАСССИВА в память */
-        } else {
-            tasks[editIndex] = task; 
-            editIndex = null; /* переключение на режим добавления */
-            modalButton.textContent = "Добавить"; /* изменение текста кнопки */
-        }
-
-        localStorage.setItem("tasks", JSON.stringify(tasks)); /* сохранение */
+        fetch('http://localhost:3000/orders', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(task)
+        })
+        .then(res => res.json())
+        .then(data => {
+            console.log('Задача добавлена на сервер', data);
+            loadTasks(); /* обновляем таблицу после добавления */
+        });
     } 
 
     /* обработка памяти */
     function renderTasks() { 
-        if (tasks.length === 0) {
-            orderTable.style.visibility = "hidden";
-            document.getElementById('noTask').style.visibility = "visible";
+        const table = document.getElementById('orderTable');
+        const noTask = document.getElementById('noTask');
+        const noSearch = document.getElementById('noSearch');
+
+        const repSearch = (search?.value || '').trim();
+        const statusFilter = complete?.value || 'Все статусы';
+
+        if (!Array.isArray(tasks) || tasks.length === 0) {
+            table.style.visibility = "hidden";
+            noTask.style.visibility = "visible";
+            noSearch.style.visibility = "hidden";
             return;
         }
 
-        orderTable.style.visibility = "visible";
-        document.getElementById('noTask').style.visibility = "hidden";
+        noTask.style.visibility = "hidden";
 
-        const table = document.getElementById('orderTable');
-
-        /* удаляем все строки кроме заголовка */
+        /* очистка строк */
         table.querySelectorAll('.mainTable').forEach(row => row.remove());
 
-        tasks.forEach((task, index) => {
-            check = true;
-            checkSearch = false;
-            repSearch = escapeHTML(search.value);
-            if (complete.value == 'Принят' && task.status != 'Принят' ||
-                complete.value == 'В работе' && task.status != 'В работе' ||
-                complete.value == 'Ждёт запчастей' && task.status != 'Ждёт запчастей' ||
-                complete.value == 'На согласовании' && task.status != 'На согласовании' ||
-                complete.value == 'Без ремонта' && task.status != 'Без ремонта' ||
-                complete.value == 'Сделан' && task.status != 'Сделан' ||
-                complete.value == 'Отменён' && task.status != 'Отменён') check = false;
-            if (search.value == '') checkSearch = true;
-            else if (task.model.includes(repSearch) || task.crush.includes(repSearch) || task.price.includes(repSearch) || task.worker.includes(repSearch)) checkSearch = true;
-            if (check && checkSearch) {
-                document.getElementById('noSearch').style.visibility = "hidden";
-                const tr = document.createElement('section'); /* создание строки таблицы */
-                tr.classList.add('mainTable');
-                const daysLeft = calcDays(task.deadline);
-                tr.innerHTML = /* создание ячеек */ `
-                <div class="tdNumber">${index + 1}</div>
-                <div class="tdModel">${task.model}</div>
-                <div class="tdStatus"><select class="statusInput">
-                    <option ${task.status === 'Принят' ? 'selected' : ''}>Принят</option>
-                    <option ${task.status === 'В работе' ? 'selected' : ''}>В работе</option>
-                    <option ${task.status === 'Ждёт запчастей' ? 'selected' : ''}>Ждёт запчастей</option>
-                    <option ${task.status === 'На согласовании' ? 'selected' : ''}>На согласовании</option>
-                    <option ${task.status === 'Без ремонта' ? 'selected' : ''}>Без ремонта</option>
-                    <option ${task.status === 'Сделан' ? 'selected' : ''}>Cделан</option>
-                    <option ${task.status === 'Отменён' ? 'selected' : ''}>Отменён</option>
-                </select></div>
-                <div class="tdBug">${task.crush}</div>
-                <div class="tdPrice">${task.price}</div>
-                <div class="tdWorker">${task.worker}</div>
-                <div class="tdBegin">${formattedDate(task.acceptDate)}</div>
-                <div class="days-cell">${daysLeft} дн.</div>
-                <div class="tdEdit">
-                    <button onclick="editTask(${index})">📝</button>
-                    <button onclick="deleteTask(${index})">❌</button>
-                </div>
-                `;
+        const filtered = tasks.filter(task => {
+        const okStatus = (statusFilter === 'Все статусы') || (task.status === statusFilter);
 
-                if (daysLeft < 0) {
-                    tr.querySelector('.days-cell').style.color = "red"; /* выбор текущего сектора */
-                }
+        const okSearch =
+        repSearch === '' ||
+        String(task.model ?? '').includes(repSearch) ||
+        String(task.crush ?? '').includes(repSearch) ||
+        String(task.price ?? '').includes(repSearch) ||
+        String(task.worker ?? '').includes(repSearch);
 
-                const select = tr.querySelector('.statusInput');
-                select.addEventListener('change', function () {
-                    tasks[index].status = this.value;
-                    localStorage.setItem("tasks", JSON.stringify(tasks));
-                    renderTasks();
-                });
+        return okStatus && okSearch;
+        });
 
-                document.getElementById('orderTable').appendChild(tr); /* закрывающий аргумент строки таблицы */
-            } else {
-                orderTable.style.visibility = "hidden";
-                document.getElementById('noSearch').style.visibility = "visible";
-            }
+        if (filtered.length === 0) {
+            table.style.visibility = "hidden";
+            noSearch.style.visibility = "visible";
+            return;
+        }
+
+        table.style.visibility = "visible";
+        noSearch.style.visibility = "hidden";
+
+        filtered.forEach((task, index) => {
+            const tr = document.createElement('section');
+            tr.classList.add('mainTable');
+            const daysLeft = calcDays(task.deadline);
+            tr.innerHTML = /* создание ячеек */ `
+            <div class="tdNumber">${index + 1}</div>
+            <div class="tdModel">${task.model}</div>
+            <div class="tdStatus"><select class="statusInput">
+                <option ${task.status === 'Принят' ? 'selected' : ''}>Принят</option>
+                <option ${task.status === 'В работе' ? 'selected' : ''}>В работе</option>
+                <option ${task.status === 'Ждёт запчастей' ? 'selected' : ''}>Ждёт запчастей</option>
+                <option ${task.status === 'На согласовании' ? 'selected' : ''}>На согласовании</option>
+                <option ${task.status === 'Без ремонта' ? 'selected' : ''}>Без ремонта</option>
+                <option ${task.status === 'Сделан' ? 'selected' : ''}>Сделан</option>
+                <option ${task.status === 'Отменён' ? 'selected' : ''}>Отменён</option>
+            </select></div>
+            <div class="tdBug">${task.crush}</div>
+            <div class="tdPrice">${task.price}</div>
+            <div class="tdWorker">${task.worker}</div>
+            <div class="tdBegin">${formattedDate(task.acceptDate)}</div>
+            <div class="days-cell">${daysLeft} дн.</div>
+            <div class="tdEdit">
+                <button onclick="editTask(${task.id})">📝</button>
+                <button onclick="deleteTask(${task.id})">❌</button>
+            </div>
+            `;
+
+            if (daysLeft < 0) tr.querySelector('.days-cell').style.color = "red"; /* выбор текущего сектора */
+
+            document.getElementById('orderTable').appendChild(tr); /* закрывающий аргумент строки таблицы */
         });
     }
 
     /* редактирование задачи */
-    function editTask(index) {
+    function editTask(id) {
         /* импорт из массива в редактирование */
-        const task = tasks[index];
+        const task = tasks.find(t => t.id == id);
+        if (!task) return;
 
         modelSecurity = returnHTML(task.model);
         crushSecurity = returnHTML(task.crush);
@@ -230,18 +242,23 @@
         dateInput.value = task.acceptDate;
         deadline.value = calcDays(task.deadline);
 
-        editIndex = index;  /* переключение на режим редактирования */;
+        editIndex = id;  /* сохранение ID для редактирования */;
         modalButton.textContent = "Сохранить"; /* изменение текста кнопки */;
         modal.style.display = 'flex';
     }
 
     /* удаление задачи */
-    function deleteTask(index) {
-        if (confirm("Удалить?")) {
-        tasks.splice(index, 1); /* вырез элемента */
-        localStorage.setItem("tasks", JSON.stringify(tasks));
-        renderTasks(); /* перезагрузка таблицы */ }
+    function deleteTask(id) {
+    if (confirm("Удалить?")) {
+        fetch(`http://localhost:3000/orders/${id}`, {
+            method: 'DELETE'
+        })
+        .then(() => {
+            loadTasks();
+        })
+        .catch(error => console.error('Ошибка при удалении:', error));
     }
+}
 
     /* очистка даты */
     function normalize(date) {
@@ -332,4 +349,58 @@
         renderTasks();
     }
 
-    /*JSWork = false;*/
+    /* переключение темы */
+    function themeChange() {
+        let lightTheme = "light.css";
+        let darkTheme = "dark.css";
+
+        let currTheme = link.getAttribute("href");
+        
+        if (currTheme == lightTheme) {
+            link.setAttribute("href", darkTheme);
+        } else {
+            link.setAttribute("href", lightTheme);
+        }
+    }
+
+    function loadTasks() {
+        fetch('http://localhost:3000/orders')
+            .then(res => res.json())
+            .then(data => {
+                tasks = data;
+                renderTasks();
+            });
+    }
+
+    /* обновление задачи */
+    function updateTask(id) {
+        modelSecurity = escapeHTML(modelInput.value);
+        crushSecurity = escapeHTML(crushInput.value);
+        workerSecurity = escapeHTML(workerInput.value);
+        noteSecurity = escapeHTML(noteInput.value);
+
+        const updatedTask = {
+            id: id,
+            device: deviceInput.value,
+            model: modelSecurity,
+            status: statusInput.value,
+            crush: crushSecurity,
+            price: priceInput.value,
+            note: noteSecurity,
+            worker: workerSecurity,
+            acceptDate: dateInput.value,
+            deadline: dateInput.value
+        };
+
+        fetch(`http://localhost:3000/orders/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updatedTask)
+        })
+        .then(res => res.json())
+        .then(data => {
+            console.log('Задача обновлена', data);
+            loadTasks();
+        })
+        .catch(error => console.error('Ошибка при обновлении:', error));
+    }

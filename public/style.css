@@ -72,12 +72,6 @@ main {
     justify-content: center;
 }
 
-article {
-    border-collapse: collapse;
-    border: 0.5px solid black;
-    max-width: 100vw;
-}
-
 #mainHead {
     display: flex;
     justify-content: space-between;
@@ -85,16 +79,6 @@ article {
 
 #mainHead div:active, #mainHead div:hover {
     color: blue;
-}
-
-#mainHead div, .mainTable div {
-    border: black 1px solid;
-    text-align: center;
-}
-
-article, #mainHead div, .mainTable div {
-    border-top: none;
-    border-bottom: none;
 }
 
 .mainTable,
@@ -157,17 +141,11 @@ article, #mainHead div, .mainTable div {
 
 #modal-window {
     display: flex;
-    background-color: white;
     width: 50vw;
     height: 95vh;
     justify-content: center;
     align-items: center;
     position: relative;
-    /*background-color: #333333;*/
-}
-
-#modal-content p {
-    /*color: white;*/
 }
 
 #modal-window input, select, nav input {

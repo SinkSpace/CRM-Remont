@@ -1,0 +1,29 @@
+article, #mainHead div, .mainTable div {
+    border-top: none !important;
+    border-bottom: none !important;
+}
+
+article {
+    border-collapse: collapse;
+    border: 0.5px solid white;
+    max-width: 100vw;
+    color: white;
+}
+
+#mainHead div, .mainTable div {
+    border: white 1px solid;
+    text-align: center;
+}
+
+body {
+    background-color: #323232;
+}
+
+header h2, #noTask, #noSearch, #JSc {
+    color: white;
+}
+
+.statusInput, #modal-window {
+    background-color: #323232;
+    color: white;
+}
