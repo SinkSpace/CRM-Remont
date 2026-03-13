@@ -116,6 +116,10 @@ main {
     justify-content: center;
 }
 
+.tdModel, .tdBug, .tdWorker {
+    word-break: break-word;
+}
+
 #editHead, .tdEdit {
     padding: 10px;
 }
@@ -179,6 +183,19 @@ main {
     border-radius: 10px;
 }
 
+#modal-archive {
+    margin-left: 10px;
+    height: 45px;
+    font-size: 1em;
+    padding-left: 20px;
+    padding-right: 20px;
+    background-color: #402cf2;
+    border: none;
+    color: white;
+    border-radius: 10px;
+    visibility: hidden;
+}
+
 #closeButton {
     position: absolute;
     top: 15px;
@@ -204,4 +221,34 @@ main {
 
 #deviceInput, #modelInput, #dateInput, #deadline {
     width: 15vw !important;
+}
+
+/* модальное меню */
+
+#modal-menu {
+    display: none; /*не отображать по умолчанию */
+    position: fixed; /* позиционировать относительно начала страницы */
+    top: 0;
+    left: 0;
+    width: 100%; /* Фон на весь экран по ширине */
+    height: 100%; /* Фон на весь экран по длине */
+    background-color: rgba(0,0,0,0.5);
+    z-index: 1000;
+    justify-content: left; /* центрирование по x */
+}
+
+#menu-window {
+    display: flex;
+    flex-direction: column;
+    width: 20vw;
+    height: 100vh;
+    align-items: left;
+    justify-content: left;
+    position: relative;
+    background-color: white;
+}
+
+#menu-window button {
+    width: 20vw;
+    height: 5vh;
 }

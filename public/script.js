@@ -5,7 +5,6 @@
     let isSyncling = false; /* синхронизация дат */
     let link = document.getElementById('data-theme');
 
-    const change = document.getElementById('change');
     const isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
 
     if (isDark) themeChange();
@@ -24,12 +23,20 @@
     };
     modal.onclick = (event /* объект события */) => {if (event.target === modal) modal.style.display = 'none'};
 
+    /* модальное меню */
+    const menuButton = document.getElementById('menu');
+    const modalMenu = document.getElementById('modal-menu');
+
+    menuButton.onclick = () => modalMenu.style.display = 'flex';
+    modalMenu.onclick = (event /* объект события */) => {if (event.target === event.currentTarget) modalMenu.style.display = 'none'}; 
+
+
     /* Добавление в таблицу */
     const modalButton = document.getElementById('modal-button');
+    const modalArchive = document.getElementById('modal-archive');
     const orderTable = document.getElementById('orderTable');
     const deviceInput = document.getElementById('deviceInput')
     const modelInput = document.getElementById('modelInput');
-    const statusSelect = document.getElementById('statusSelect');
     const statusInput = document.getElementById('statusInput');
     const crushInput = document.getElementById('crushInput');
     const priceInput = document.getElementById('priceInput');
@@ -86,9 +93,6 @@
         else if (crushInput.value == '') alert('Поле "Неисправность" не может быть пустым');
         else if (priceInput.value == '') alert ('Поле "Цена" не может быть пустым');
         else if (workerInput.value == '') alert ('Поле "Исполнитель" не может быть пустым');
-        else if (modelInput.value.length > 25) alert ('Поле "Модель" не может содержать больше 25 символов');
-        else if (crushInput.value.length > 50) alert ('Поле "Неисправность" не может содержать больше 50 символов');
-        else if (workerInput.value.length > 20) alert ('Поле "Исполнитель" не может содержать больше 20 символов');
         else if (editIndex !== null) {
             updateTask(editIndex);
         }
@@ -121,7 +125,6 @@
         noteSecurity = escapeHTML(noteInput.value);
 
         const task = { /* характеристики добавления в память */
-            id: Date.now(),
             device: deviceInput.value,
             model: modelSecurity,
             status: statusInput.value,
@@ -130,7 +133,7 @@
             note: noteSecurity,
             worker: workerSecurity,
             acceptDate: dateInput.value,
-            deadline: dateInput.value
+            deadline: Number(deadline.value)
         };
 
         fetch('http://localhost:3000/orders', {
@@ -147,11 +150,12 @@
 
     /* обработка памяти */
     function renderTasks() { 
+        const isArchive = window.location.pathname === '/archive';
         const table = document.getElementById('orderTable');
         const noTask = document.getElementById('noTask');
         const noSearch = document.getElementById('noSearch');
 
-        const repSearch = (search?.value || '').trim();
+        const repSearch = (search?.value || '').trim().toLowerCase();
         const statusFilter = complete?.value || 'Все статусы';
 
         if (!Array.isArray(tasks) || tasks.length === 0) {
@@ -171,10 +175,10 @@
 
         const okSearch =
         repSearch === '' ||
-        String(task.model ?? '').includes(repSearch) ||
-        String(task.crush ?? '').includes(repSearch) ||
-        String(task.price ?? '').includes(repSearch) ||
-        String(task.worker ?? '').includes(repSearch);
+        String(task.model ?? '').toLowerCase().includes(repSearch) ||
+        String(task.crush ?? '').toLowerCase().includes(repSearch) ||
+        String(task.price ?? '').toLowerCase().includes(repSearch) ||
+        String(task.worker ?? '').toLowerCase().includes(repSearch);
 
         return okStatus && okSearch;
         });
@@ -191,7 +195,7 @@
         filtered.forEach((task, index) => {
             const tr = document.createElement('section');
             tr.classList.add('mainTable');
-            const daysLeft = calcDays(task.deadline);
+            const daysLeft = Number(task.deadline) || 0;
             tr.innerHTML = /* создание ячеек */ `
             <div class="tdNumber">${index + 1}</div>
             <div class="tdModel">${task.model}</div>
@@ -210,11 +214,13 @@
             <div class="tdBegin">${formattedDate(task.acceptDate)}</div>
             <div class="days-cell">${daysLeft} дн.</div>
             <div class="tdEdit">
-                <button onclick="editTask(${task.id})">📝</button>
-                <button onclick="deleteTask(${task.id})">❌</button>
+                ${isArchive ? '' : `
+                    <button onclick="editTask(${task.id})">📝</button>
+                    <button onclick="deleteTask(${task.id})">❌</button>
+                `}
             </div>
             `;
-/*
+
             const select = tr.querySelector('.statusInput');
 
             select.addEventListener('change', function () {
@@ -231,7 +237,7 @@
                 .then(res => res.json())
                 .then(() => loadTasks())
                 .catch(err => console.error('Ошибка обновления статуса:', err));
-            });*/
+            });
 
             if (daysLeft < 0) tr.querySelector('.days-cell').style.color = "red"; /* выбор текущего сектора */
 
@@ -244,6 +250,21 @@
         /* импорт из массива в редактирование */
         const task = tasks.find(t => t.id == id);
         if (!task) return;
+
+        modalArchive.onclick = () => {
+            fetch('http://localhost:3000/move', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(task)
+            })
+            .then(res => res.json())
+            .then(data => {
+                console.log('Задача добавлена на сервер', data);
+                loadTasks(); /* обновляем таблицу после добавления */
+            });
+            deleteTask(id);
+            modal.style.display = 'none';
+        }
 
         modelSecurity = returnHTML(task.model);
         crushSecurity = returnHTML(task.crush);
@@ -258,10 +279,11 @@
         noteInput.value = noteSecurity;
         workerInput.value = workerSecurity;
         dateInput.value = task.acceptDate;
-        deadline.value = calcDays(task.deadline);
+        deadline.value = Number(task.deadline) || '';
 
         editIndex = id;  /* сохранение ID для редактирования */;
         modalButton.textContent = "Сохранить"; /* изменение текста кнопки */;
+        modalArchive.style.visibility = "visible";
         modal.style.display = 'flex';
     }
 
@@ -284,21 +306,30 @@
         return date;
     }
 
-    function calcDays(dateString) {
-        if (!dateString || !dateString.includes('-')) return '';
-        const end = normalize(new Date(dateString));
+    function calcDays(dateValue) {
+        if (!dateValue) return '';
+
+        const end = normalize(new Date(dateValue));
         const today = normalize(new Date());
+
+        if (isNaN(end)) return '';
+
         const diffMs = end - today;
+
         return Math.ceil(diffMs / (1000 * 60 * 60 * 24));
     }
 
-    function formattedDate(dateString) {
-        if (!dateString) return '';
+    function formattedDate(dateValue) {
+        if (!dateValue) return '';
 
-        const parts = dateString.split('-');
-        if (parts.length !== 3) return '';
+        const date = new Date(dateValue);
+        if (isNaN(date)) return '';
 
-        return `${parts[2]}.${parts[1]}.${parts[0]}`;
+        const day = String(date.getDate()).padStart(2, '0');
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const year = date.getFullYear();
+
+        return `${day}.${month}.${year}`;
     }
 
     /* HTML-инъекция */
@@ -382,7 +413,11 @@
     }
 
     function loadTasks() {
-        fetch('http://localhost:3000/orders')
+        let url = 'http://localhost:3000/orders';
+
+        if (window.location.pathname === '/archive') url = 'http://localhost:3000/archive-data';
+
+        fetch(url)
             .then(res => res.json())
             .then(data => {
                 tasks = data;
@@ -407,7 +442,7 @@
             note: noteSecurity,
             worker: workerSecurity,
             acceptDate: dateInput.value,
-            deadline: dateInput.value
+            deadline: Number(deadline.value)
         };
 
         fetch(`http://localhost:3000/orders/${id}`, {

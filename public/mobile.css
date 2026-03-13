@@ -136,4 +136,18 @@
     #modelHead, .tdModel {
         border-left: none !important;
     }
+
+    #modal-window {
+        width: 100vw;
+        height: 100vh;
+    }
+
+    #modal-window input, select, nav input {
+        height: 35px;
+        width: 70vw;
+    }
+
+    #deviceInput, #modelInput, #dateInput, #deadline {
+        width: 30vw !important;
+    }
 }
