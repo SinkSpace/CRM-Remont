@@ -1,0 +1,25 @@
+h1 {
+    display: flex;
+    justify-content: center;
+}
+
+main {
+    display: flex;
+    justify-content: center;
+}
+
+main input {
+    width: 30vw;
+    height: 5vh;
+}
+
+button {
+    height: 45px;
+    font-size: 1em;
+    padding-left: 20px;
+    padding-right: 20px;
+    background-color: #2C97F2;
+    border: none;
+    color: white;
+    border-radius: 10px;
+}

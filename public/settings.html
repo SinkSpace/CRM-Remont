@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!--<link rel="stylesheet" href="light.css" id="data-theme">-->
+    <link rel="stylesheet" href="styleset.css">
+    <link rel="stylesheet" href="uni.css">
+    <link rel="stylesheet" href="mobile.css">
+    <title>CRM</title>
+</head>
+<body>
+    <nav class="parent">
+        <div class="parent" id="headName">
+            <img alt="Меню" src="menu.svg" id="menu">
+            <h1>CRM</h1>
+        </div>
+        <div id="nameShop">
+            <p style="color: white;">example@example.ru</p>
+            <p style="color: gray;">Магазин "Пример"</p>
+        </div>
+    </nav>
+    <header class="parent">
+        <p style="visibility: hidden;">a</p>
+        <h2>Настройки</h2>
+        <p style="visibility: hidden;">a</p>
+    </header>
+    <main>
+        <div id="sidebar">
+            <p><button>Компания</button></p>
+            <p><button>Квитанции</button></p>
+            <p><button>Сотрудники</button></p>
+            <p><button>Устройства</button></p>
+            <p><button>Списки</button></p>
+            <p><button>Статусы</button></p>
+            <p><button>Уведомления</button></p>
+            <p><button>Ещё</button></p>
+        </div>
+        <div id="hm">
+            <section>
+                <p>Название</p> <input id="displayName">
+                <p>Юридическое наименование</p> <input id="shopName">
+                <p>Город</p> <input id="city">
+                <p>Адрес</p> <input id="address">
+                <p>Телефон</p> <input id="phone">
+                <p><button id="saveProfileButton">Сохранить</button></p>
+            </section>
+        </div>
+    </main>
+    <div id="modal-menu">
+        <div id="menu-window">
+            <a href="/"><button>Список заказов</button></a>
+            <a href="/track"><button>Отслеживание заказов</button></a>
+            <a href="/settings"><button>Настройки</button></a>
+            <a href="/logs"><button>Логи</button></a>
+            <a href="/admin"><button>Админ-панель</button></a>
+            <a href="/exit"><button>Выход</button></a>
+        </div>
+    </div>
+</body>
+<script src="menu.js"></script>
+<script src="settings.js"></script>
+</html>
