@@ -23,6 +23,35 @@ if (emailElement) {
     userElement.textContent = user.display_name;
 }
 
+async function loadWorkersToSelect() {
+    try {
+        const response = await fetch(`/api/workers/${user.id}`);
+        const workers = await response.json();
+
+        if (!response.ok) {
+            throw new Error('Ошибка загрузки сотрудников');
+        }
+
+        const select = document.getElementById('workerInput');
+        if (!select) return;
+
+        // очищаем, но оставляем placeholder
+        select.innerHTML = '<option value="">Выберите сотрудника</option>';
+
+        workers
+            .filter(w => w.is_active)
+            .forEach(worker => {
+                const option = document.createElement('option');
+                option.value = worker.name; // пока используем имя
+                option.textContent = `${worker.name} (${worker.role})`;
+                select.appendChild(option);
+            });
+
+    } catch (error) {
+        console.error('Ошибка загрузки сотрудников:', error);
+    }
+}
+
 /* Модальное окно */
 const closeButton = document.getElementById('closeButton'); /* взаимодействие с кнопкой закрытия */
 const modal = document.getElementById('modal'); /* взаимодействие с модальным окном */
@@ -97,6 +126,8 @@ complete.addEventListener('change', function(event) { renderTasks() });
 search.addEventListener('input', renderTasks);
 document.addEventListener('DOMContentLoaded', () => { /* загрузка страницы */
     loadTasks(); /* обработка памяти */
+    loadWorkersToSelect();
+    loadDevicesToSelect();
 });
 
 modalButton.onclick = () => {
@@ -153,6 +184,7 @@ function addTask() {
     const SNSecurity = escapeHTML(SNInput.value.trim());
 
     const task = {
+        user_id: user.id,
         phone: phoneInput.value.trim(),
         customer: customerInput.value.trim(),
         worker: workerInput.value.trim(),
@@ -457,6 +489,7 @@ function updateTask(id) {
 
     const updatedTask = {
         id: id,
+        user_id: user.id,
         phone: phoneSecurity,
         customer: customerSecurity,
         worker: workerSecurity,
@@ -485,4 +518,29 @@ function updateTask(id) {
         loadTasks();
     })
     .catch(error => console.error('Ошибка при обновлении:', error));
+}
+
+async function loadDevicesToSelect() {
+    try {
+        const response = await fetch(`/api/devices/${user.id}`);
+        const devices = await response.json();
+
+        if (!response.ok) {
+            throw new Error(devices.error || 'Ошибка загрузки устройств');
+        }
+
+        const select = document.getElementById('deviceInput');
+        if (!select) return;
+
+        select.innerHTML = '<option value="">Выберите устройство</option>';
+
+        devices.forEach(device => {
+            const option = document.createElement('option');
+            option.value = device.name;
+            option.textContent = device.name;
+            select.appendChild(option);
+        });
+    } catch (error) {
+        console.error('Ошибка загрузки устройств:', error);
+    }
 }

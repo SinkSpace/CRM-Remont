@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!--<link rel="stylesheet" href="light.css" id="data-theme">-->
-    <link rel="stylesheet" href="styleset.css">
-    <link rel="stylesheet" href="uni.css">
-    <link rel="stylesheet" href="mobile.css">
+    <link rel="stylesheet" href="css/light.css" id="data-theme">
+    <link rel="stylesheet" href="css/settings.css">
+    <link rel="stylesheet" href="css/uni.css">
+    <link rel="stylesheet" href="css/mobile.css">
     <title>CRM</title>
 </head>
 <body>
@@ -27,30 +27,91 @@
     </header>
     <main>
         <div id="sidebar">
-            <p><button>Компания</button></p>
-            <p><button>Квитанции</button></p>
-            <p><button>Сотрудники</button></p>
-            <p><button>Устройства</button></p>
-            <p><button>Списки</button></p>
-            <p><button>Статусы</button></p>
-            <p><button>Уведомления</button></p>
-            <p><button>Ещё</button></p>
+            <p><button class="settings-tab active" data-tab="company">Компания</button></p>
+            <!--<p><button class="settings-tab" data-tab="receipts">Квитанции</button></p>-->
+            <p><button class="settings-tab" data-tab="workers">Сотрудники</button></p>
+            <p><button class="settings-tab" data-tab="devices">Устройства</button></p>
+            <p><button class="settings-tab" data-tab="lists">Списки</button></p>
+            <p><button class="settings-tab" data-tab="statuses">Статусы</button></p>
+            <p><button class="settings-tab" data-tab="notifications">Уведомления</button></p>
+            <p><button class="settings-tab" data-tab="more">Ещё</button></p>
         </div>
+
         <div id="hm">
-            <section>
-                <p>Название</p> <input id="displayName">
-                <p>Юридическое наименование</p> <input id="shopName">
-                <p>Город</p> <input id="city">
-                <p>Адрес</p> <input id="address">
-                <p>Телефон</p> <input id="phone">
+            <section class="settings-panel active" id="tab-company">
+                <h3>Компания</h3>
+                <p>Название</p><input id="displayName">
+                <p>Юридическое наименование</p><input id="shopName">
+                <p>Город</p><input id="city">
+                <p>Адрес</p><input id="address">
+                <p>Телефон</p><input id="phone">
                 <p><button id="saveProfileButton">Сохранить</button></p>
+            </section>
+
+            <section class="settings-panel" id="tab-receipts">
+                <h3>Квитанции</h3>
+                <p>Шаблоны, печать, подписи, логотип и т.д.</p>
+            </section>
+
+            <section class="settings-panel" id="tab-workers">
+                <h3>Сотрудники</h3>
+                <div class="worker-form">
+                    <input id="workerNameInput" placeholder="Имя сотрудника">
+                    <select id="workerRoleInput">
+                        <option>Владелец</option>
+                        <option>Менеджер</option>
+                        <option selected>Сотрудник</option>
+                    </select>
+                    <input id="workerPhoneInput" placeholder="Телефон">
+                    <input id="workerEmailInput" placeholder="Email">
+                    <button id="addWorkerButton">Добавить</button>
+                </div>
+
+                <div id="workersList"></div>
+            </section>
+
+            <section class="settings-panel" id="tab-devices">
+                <h3>Устройства</h3>
+
+                <div class="device-form">
+                    <input id="deviceNameInput" placeholder="Например: Телефон">
+                    <button id="addDeviceButton">Добавить</button>
+                </div>
+
+                <div id="devicesList"></div>
+            </section>
+
+            <!--<section class="settings-panel" id="tab-lists">
+                <h3>Списки</h3>
+                <p>Справочники и дополнительные списки.</p>
+            </section>-->
+
+            <section class="settings-panel" id="tab-statuses">
+                <h3>Статусы</h3>
+
+                <div class="status-form">
+                    <input id="statusNameInput" placeholder="Например: В работе">
+                    <button id="addStatusButton">Добавить</button>
+                </div>
+
+                <div id="statusesList"></div>
+            </section>
+
+            <section class="settings-panel" id="tab-notifications">
+                <h3>Уведомления</h3>
+                <p>SMS, email и прочие уведомления.</p>
+            </section>
+
+            <section class="settings-panel" id="tab-more">
+                <h3>Ещё</h3>
+                <p>Дополнительные настройки.</p>
             </section>
         </div>
     </main>
     <div id="modal-menu">
         <div id="menu-window">
             <a href="/"><button>Список заказов</button></a>
-            <a href="/track"><button>Отслеживание заказов</button></a>
+            <!--<a href="/track"><button>Отслеживание заказов</button></a>-->
             <a href="/settings"><button>Настройки</button></a>
             <a href="/logs"><button>Логи</button></a>
             <a href="/admin"><button>Админ-панель</button></a>
@@ -58,6 +119,6 @@
         </div>
     </div>
 </body>
-<script src="menu.js"></script>
-<script src="settings.js"></script>
+<script src="js/menu.js"></script>
+<script src="js/settings.js"></script>
 </html>

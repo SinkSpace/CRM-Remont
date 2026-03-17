@@ -7,6 +7,31 @@ input.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') addTracking();
 });
 
+document.addEventListener('DOMContentLoaded', loadTrackings);
+
+async function loadTrackings() {
+    try {
+        const response = await fetch('/api/trackings');
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || 'Не удалось загрузить отслеживания');
+        }
+
+        const items = Array.isArray(data)
+            ? data
+            : Array.isArray(data.data)
+                ? data.data
+                : [];
+
+        container.innerHTML = '';
+
+        items.forEach(item => renderTrackingCard(item));
+    } catch (error) {
+        console.error('Ошибка загрузки отслеживаний:', error);
+    }
+}
+
 async function addTracking() {
     const trackingNumber = input.value.trim();
 
@@ -33,11 +58,17 @@ async function addTracking() {
         const data = await response.json();
 
         if (!response.ok) {
-            throw new Error(data.error || 'Ошибка при добавлении трека');
+            console.log('Tracking API error:', data);
+            throw new Error(
+                data?.details?.meta?.message ||
+                data?.details?.message ||
+                data?.error ||
+                'Ошибка при добавлении трека'
+            );
         }
 
-        renderTrackingCard(data);
         input.value = '';
+        await loadTrackings();
     } catch (error) {
         console.error(error);
         alert(error.message || 'Не удалось получить данные');

@@ -1,0 +1,227 @@
+#search {
+    border-radius: 10px 0px 0px 10px;
+    border: 0px;
+    width: 30vw;
+    padding-left: 5px;
+}
+
+#filter {
+    width: 150px;
+    height: 35px;
+    border-radius: 0px 10px 10px 0px;
+    border: 0px;
+}
+
+#nameShop {
+    gap: 10px;
+}
+
+h1 {
+    display: flex;
+    justify-content: center;
+}
+
+main {
+    display: flex;
+    justify-content: center;
+    gap: 100px;
+}
+
+main h3 {
+    margin-top: 15px;
+}
+
+header {
+    display: flex;
+    justify-content: space-between;
+    padding-left: 20px;
+    padding-right: 20px;
+    height: 100px;
+}
+
+#hm {
+    display: flex;
+    gap: 50px;
+    width: 75vw;
+}
+
+#sidebar button, #hm button {
+    height: 45px;
+    width: 10vw;
+    font-size: 1em;
+    padding-left: 20px;
+    padding-right: 20px;
+    background-color: #333333;
+    border: none;
+    color: white;
+    border-radius: 10px;
+}
+
+input {
+    width: 15vw;
+    height: 5vh;
+}
+
+select {
+    width: 10vw;
+    height: 5vh;
+}
+
+.settings-panel {
+    display: none;
+    flex-direction: column;
+}
+
+.settings-panel.active {
+    display: flex;
+}
+
+.settings-tab.active {
+    background-color: #2C97F2 !important;
+}
+
+#tab-workers {
+    gap: 10px;
+}
+
+.worker-form {
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+#workersList {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.worker-card {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr 1fr 1fr auto auto;
+    gap: 10px;
+    align-items: center;
+    padding: 12px;
+    border-radius: 10px;
+    background: #f2f2f2;
+}
+
+.worker-card input,
+.worker-card select {
+    width: 100%;
+}
+
+.worker-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.worker-actions button {
+    width: auto !important;
+    min-width: 100px;
+}
+
+.device-form {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+#devicesList {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.device-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    border-radius: 10px;
+    background: #f2f2f2;
+    width: 100%;
+    max-width: 700px;
+}
+
+.device-name {
+    font-size: 16px;
+}
+
+.delete-device-button {
+    width: auto !important;
+    min-width: 120px;
+}
+
+.status-form {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+#statusesList {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.status-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    border-radius: 10px;
+    background: #f2f2f2;
+    width: 100%;
+    max-width: 700px;
+}
+
+.status-name {
+    font-size: 16px;
+}
+
+.delete-status-button {
+    width: auto !important;
+    min-width: 120px;
+}
+
+@media (max-width: 1100px) {
+    .status-form,
+    .status-card {
+        flex-direction: column;
+        align-items: stretch;
+    }
+}
+
+@media (max-width: 1100px) {
+    .device-form,
+    .device-card {
+        flex-direction: column;
+        align-items: stretch;
+    }
+}
+
+@media (max-width: 1100px) {
+    .worker-form,
+    .worker-card {
+        grid-template-columns: 1fr;
+    }
+
+    .worker-actions {
+        flex-direction: column;
+    }
+
+    #sidebar button,
+    #hm button {
+        width: auto;
+    }
+
+    input,
+    select {
+        width: 100%;
+    }
+}

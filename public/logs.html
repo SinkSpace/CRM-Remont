@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!--<link rel="stylesheet" href="light.css" id="data-theme">-->
-    <link rel="stylesheet" href="styletrack.css">
-    <link rel="stylesheet" href="uni.css">
-    <link rel="stylesheet" href="mobile.css">
+    <link rel="stylesheet" href="css/light.css" id="data-theme">
+    <link rel="stylesheet" href="css/track.css">
+    <link rel="stylesheet" href="css/uni.css">
+    <link rel="stylesheet" href="css/mobile.css">
     <title>CRM</title>
 </head>
 <body>
@@ -27,24 +27,13 @@
     </header>
     <main>
         <div id="hm">
-            <div>
-                <h3>Добавление заказа №12</h3>
-                <p>SinkSpace</p>
-            </div>
-            <div>
-                <h3>Удаление заказа №11</h3>
-                <p>SinkSpace</p>
-            </div>
-            <div>
-                <h3>Редактирование заказа №10</h3>
-                <p>SinkSpace</p>
-            </div>
+            <div id="logsList"></div>
         </div>
     </main>
     <div id="modal-menu">
         <div id="menu-window">
             <a href="/"><button>Список заказов</button></a>
-            <a href="/track"><button>Отслеживание заказов</button></a>
+            <!--<a href="/track"><button>Отслеживание заказов</button></a>-->
             <a href="/settings"><button>Настройки</button></a>
             <a href="/logs"><button>Логи</button></a>
             <a href="/admin"><button>Админ-панель</button></a>
@@ -52,5 +41,6 @@
         </div>
     </div>
 </body>
-<script src="menu.js"></script>
+<script src="js/logs.js"></script>
+<script src="js/menu.js"></script>
 </html>

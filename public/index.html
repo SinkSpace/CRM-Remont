@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="light.css" id="data-theme">
-    <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="uni.css">
-    <link rel="stylesheet" href="mobile.css">
+    <link rel="stylesheet" href="css/light.css" id="data-theme">
+    <link rel="stylesheet" href="css/index.css">
+    <link rel="stylesheet" href="css/uni.css">
+    <link rel="stylesheet" href="css/mobile.css">
     <title>CRM</title>
 </head>
 <body>
@@ -74,7 +74,9 @@
 
                 <section class="field">
                     <label for="workerInput">Исполнитель</label>
-                    <input id="workerInput" type="text">
+                    <select id="workerInput">
+                        <option value="">Выберите сотрудника</option>
+                    </select>
                 </section>
             </div>
 
@@ -82,16 +84,7 @@
                 <section class="field">
                     <label for="deviceInput">Устройство</label>
                     <select id="deviceInput">
-                        <option>Смартфон</option>
-                        <option>Планшет</option>
-                        <option>Ноутбук</option>
-                        <option>Настольный компьютер</option>
-                        <option>Умные часы</option>
-                        <option>Фитнес-браслет</option>
-                        <option>Электронная книга</option>
-                        <option>Игровая консоль</option>
-                        <option>Смарт-телевизор</option>
-                        <option>Голосовой помощник</option>
+                        <option value="">Выберите устройство</option>
                     </select>
                 </section>
 
@@ -108,12 +101,12 @@
 
             <div class="modal-row modal-row-2 checks-row">
                 <label class="check-field">
-                    <input type="checkbox" id="deviceBox">
+                    <input type="checkbox" id="deviceBox" style="width: auto; height: auto;">
                     <span>Аппарат</span>
                 </label>
 
                 <label class="check-field">
-                    <input type="checkbox" id="chargeryBox">
+                    <input type="checkbox" id="chargeryBox" style="width: auto; height: auto;">
                     <span>Зарядное устройство</span>
                 </label>
             </div>
@@ -176,7 +169,7 @@
     <div id="modal-menu">
         <div id="menu-window">
             <a href="/"><button>Список заказов</button></a>
-            <a href="/track"><button>Отслеживание заказов</button></a>
+            <!--<a href="/track"><button>Отслеживание заказов</button></a>-->
             <a href="/settings"><button>Настройки</button></a>
             <a href="/logs"><button>Логи</button></a>
             <a href="/admin"><button>Админ-панель</button></a>
@@ -184,6 +177,6 @@
         </div>
     </div>
 </body>
-<script src="script.js"></script>
-<script src="menu.js"></script>
+<script src="js/index.js"></script>
+<script src="js/menu.js"></script>
 </html>
