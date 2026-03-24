@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 async function loadLogs() {
     try {
-        const response = await fetch(`/api/logs/${user.id}`);
+        const response = await fetch(`/api/logs/${user.company_id}`);
         const logs = await response.json();
 
         if (!response.ok) {

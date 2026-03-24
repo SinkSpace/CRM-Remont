@@ -189,6 +189,137 @@ select {
     min-width: 120px;
 }
 
+#hm {
+    align-items: flex-start;
+}
+
+.admin-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+}
+
+.admin-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    border-radius: 999px;
+    background: #eaf4ff;
+    color: #1162b1;
+    font-weight: 600;
+    width: fit-content;
+}
+
+.admin-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(140px, 1fr));
+    gap: 12px;
+    margin-bottom: 24px;
+    width: 100%;
+    max-width: 900px;
+}
+
+.admin-stat {
+    background: #f2f2f2;
+    padding: 16px;
+    border-radius: 14px;
+}
+
+.admin-stat p {
+    margin: 0 0 8px;
+    color: #666;
+}
+
+.admin-stat h3 {
+    margin: 0;
+    font-size: 28px;
+}
+
+.panel-block {
+    width: 100%;
+    max-width: 900px;
+    margin-bottom: 28px;
+}
+
+.panel-block h3,
+.panel-block h4 {
+    margin-bottom: 10px;
+}
+
+.panel-block p {
+    margin-bottom: 6px;
+}
+
+.company-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(220px, 1fr));
+    gap: 16px;
+    max-width: 900px;
+}
+
+.company-grid label {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.company-grid input {
+    width: 100%;
+}
+
+.hint {
+    color: #666;
+    margin-top: 0;
+}
+
+.status-card,
+.device-card,
+.worker-card,
+.log-card {
+    max-width: 900px;
+}
+
+.log-card {
+    background: #f2f2f2;
+    border-radius: 12px;
+    padding: 14px;
+}
+
+.log-card h4,
+.log-card p,
+.log-card pre {
+    margin: 0 0 8px;
+}
+
+.log-card pre {
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-size: 13px;
+    background: white;
+    border-radius: 8px;
+    padding: 10px;
+}
+
+.empty-state {
+    color: #666;
+    background: #f2f2f2;
+    padding: 14px;
+    border-radius: 12px;
+    width: 100%;
+    max-width: 900px;
+}
+
+@media (max-width: 1100px) {
+    .admin-grid,
+    .company-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
 @media (max-width: 1100px) {
     .status-form,
     .status-card {

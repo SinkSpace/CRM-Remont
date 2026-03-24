@@ -37,7 +37,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 async function loadDevices() {
     try {
-        const response = await fetch(`/api/devices/${user.id}`);
+        const response = await fetch(`/api/devices/${user.company_id}`);
         const data = await response.json();
 
         if (!response.ok) {
@@ -101,6 +101,7 @@ async function createDevice() {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
+                company_id: user.company_id,
                 user_id: user.id,
                 name
             })
@@ -125,7 +126,13 @@ async function deleteDevice(id) {
         if (!confirm('Удалить устройство?')) return;
 
         const response = await fetch(`/api/devices/${id}`, {
-            method: 'DELETE'
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                company_id: user.company_id
+            })
         });
 
         const data = await response.json();
@@ -152,10 +159,14 @@ async function loadProfile() {
 
         const displayNameInput = document.getElementById('displayName');
         const shopNameInput = document.getElementById('shopName');
+        const cityInput = document.getElementById('city');
+        const addressInput = document.getElementById('address');
         const phoneInput = document.getElementById('phone');
 
         if (displayNameInput) displayNameInput.value = data.display_name || '';
         if (shopNameInput) shopNameInput.value = data.shop_name || '';
+        if (cityInput) cityInput.value = data.city || '';
+        if (addressInput) addressInput.value = data.address || '';
         if (phoneInput) phoneInput.value = data.phone || '';
     } catch (error) {
         console.error('Ошибка загрузки профиля:', error);
@@ -172,6 +183,8 @@ function bindProfileSave() {
         try {
             const display_name = document.getElementById('displayName').value.trim();
             const shop_name = document.getElementById('shopName').value.trim();
+            const city = document.getElementById('city').value.trim();
+            const address = document.getElementById('address').value.trim();
             const phone = document.getElementById('phone').value.trim();
 
             if (!display_name) {
@@ -187,6 +200,8 @@ function bindProfileSave() {
                 body: JSON.stringify({
                     display_name,
                     shop_name,
+                    city,
+                    address,
                     phone
                 })
             });
@@ -201,6 +216,8 @@ function bindProfileSave() {
                 ...user,
                 display_name,
                 shop_name,
+                city,
+                address,
                 phone
             };
 
@@ -217,7 +234,7 @@ function bindProfileSave() {
 
 async function loadWorkers() {
     try {
-        const response = await fetch(`/api/workers/${user.id}`);
+        const response = await fetch(`/api/workers/${user.company_id}`);
         const data = await response.json();
 
         if (!response.ok) {
@@ -306,6 +323,7 @@ async function createWorker() {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
+                company_id: user.company_id,
                 user_id: user.id,
                 name,
                 role,
@@ -351,6 +369,7 @@ async function updateWorker(id, card) {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
+                company_id: user.company_id,
                 name,
                 role,
                 phone,
@@ -378,7 +397,13 @@ async function deleteWorker(id) {
         if (!confirm('Удалить сотрудника?')) return;
 
         const response = await fetch(`/api/workers/${id}`, {
-            method: 'DELETE'
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                company_id: user.company_id
+            })
         });
 
         const data = await response.json();
@@ -390,6 +415,119 @@ async function deleteWorker(id) {
         await loadWorkers();
     } catch (error) {
         console.error('Ошибка удаления сотрудника:', error);
+        alert(error.message);
+    }
+}
+
+async function loadStatuses() {
+    try {
+        const response = await fetch(`/api/statuses/${user.company_id}`);
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || 'Ошибка загрузки статусов');
+        }
+
+        renderStatuses(Array.isArray(data) ? data : []);
+    } catch (error) {
+        console.error('Ошибка загрузки статусов:', error);
+        alert(error.message);
+    }
+}
+
+function renderStatuses(statuses) {
+    const container = document.getElementById('statusesList');
+    if (!container) return;
+
+    container.innerHTML = '';
+
+    if (statuses.length === 0) {
+        container.innerHTML = '<p>Статусов пока нет</p>';
+        return;
+    }
+
+    statuses.forEach(status => {
+        const card = document.createElement('div');
+        card.className = 'status-card';
+
+        card.innerHTML = `
+            <span class="status-name">${escapeHtml(status.name || '')}</span>
+            <button class="delete-status-button">Удалить</button>
+        `;
+
+        const deleteButton = card.querySelector('.delete-status-button');
+        deleteButton.addEventListener('click', () => deleteStatus(status.id));
+
+        container.appendChild(card);
+    });
+}
+
+function bindStatusCreate() {
+    const addStatusButton = document.getElementById('addStatusButton');
+    if (!addStatusButton) return;
+
+    addStatusButton.addEventListener('click', createStatus);
+}
+
+async function createStatus() {
+    try {
+        const nameInput = document.getElementById('statusNameInput');
+        const name = nameInput.value.trim();
+
+        if (!name) {
+            alert('Название статуса обязательно');
+            return;
+        }
+
+        const response = await fetch('/api/statuses', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                company_id: user.company_id,
+                user_id: user.id,
+                name
+            })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || 'Ошибка добавления статуса');
+        }
+
+        nameInput.value = '';
+        await loadStatuses();
+    } catch (error) {
+        console.error('Ошибка добавления статуса:', error);
+        alert(error.message);
+    }
+}
+
+async function deleteStatus(id) {
+    try {
+        if (!confirm('Удалить статус?')) return;
+
+        const response = await fetch(`/api/statuses/${id}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                company_id: user.company_id
+            })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || 'Ошибка удаления статуса');
+        }
+
+        await loadStatuses();
+    } catch (error) {
+        console.error('Ошибка удаления статуса:', error);
         alert(error.message);
     }
 }

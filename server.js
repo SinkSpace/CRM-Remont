@@ -1,13 +1,9 @@
 const express = require('express'); /* подключение express */
 const cors = require('cors'); /* подключение cors */
 const path = require('path');
-const { stringify } = require('querystring');
 const pool = require('./db'); /* подключение БД */
 const app = express(); /* создание веб-приложения */
 const bcrypt = require('bcrypt');
-
-require('dotenv').config();
-const TrackingMore = process.env.TrackingMore;
 
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(cors());
@@ -18,60 +14,77 @@ app.get('/', (req, res) => {
 });
 
 app.post('/api/register', async (req, res) => {
+    const client = await pool.connect();
+
     try {
+        await client.query('BEGIN');
+
         const { email, password, display_name, shop_name, phone } = req.body;
 
         if (!email || !password || !display_name) {
-            return res.status(400).json({
-                error: 'email, password и display_name обязательны'
-            });
+            await client.query('ROLLBACK');
+            return res.status(400).json({ error: 'email, password и display_name обязательны' });
         }
 
-        if (password.length < 6) {
-            return res.status(400).json({
-                error: 'Пароль должен быть не короче 6 символов'
-            });
-        }
-
-        const existingUser = await pool.query(
+        const existingUser = await client.query(
             'SELECT id FROM users WHERE email = $1',
             [email]
         );
 
         if (existingUser.rows.length > 0) {
-            return res.status(409).json({
-                error: 'Пользователь с таким email уже существует'
-            });
+            await client.query('ROLLBACK');
+            return res.status(409).json({ error: 'Пользователь с таким email уже существует' });
         }
 
+        const companyResult = await client.query(
+            `INSERT INTO companies (name)
+             VALUES ($1)
+             RETURNING id, name`,
+            [shop_name || display_name]
+        );
+
+        const company = companyResult.rows[0];
         const passwordHash = await bcrypt.hash(password, 10);
 
-        const userResult = await pool.query(
-            `INSERT INTO users (email, password_hash, role)
-             VALUES ($1, $2, $3)
-             RETURNING id, email, role, created_at`,
-            [email, passwordHash, 'master']
+        const userResult = await client.query(
+            `INSERT INTO users (email, password_hash, role, company_id)
+             VALUES ($1, $2, $3, $4)
+             RETURNING id, email, role, company_id`,
+            [email, passwordHash, 'master', company.id]
         );
 
         const user = userResult.rows[0];
 
-        await pool.query(
-            `INSERT INTO user_profiles (user_id, display_name, shop_name, phone)
-             VALUES ($1, $2, $3, $4)`,
-            [user.id, display_name, shop_name || null, phone || null]
+        await client.query(
+            `INSERT INTO user_profiles (user_id, company_id, display_name, shop_name, phone)
+             VALUES ($1, $2, $3, $4, $5)`,
+            [user.id, company.id, display_name, shop_name || null, phone || null]
         );
+
+        await client.query(
+            `UPDATE companies
+             SET owner_user_id = $1
+             WHERE id = $2`,
+            [user.id, company.id]
+        );
+
+        await client.query('COMMIT');
 
         res.status(201).json({
             message: 'Пользователь зарегистрирован',
             user: {
                 id: user.id,
                 email: user.email,
-                role: user.role
+                role: user.role,
+                company_id: user.company_id
             }
         });
     } catch (error) {
+        await client.query('ROLLBACK');
         console.error('Ошибка регистрации:', error);
         res.status(500).json({ error: 'Ошибка сервера' });
+    } finally {
+        client.release();
     }
 });
 
@@ -92,13 +105,14 @@ app.post('/api/login', async (req, res) => {
                 u.password_hash,
                 u.role,
                 u.is_active,
+                u.company_id,
                 p.display_name,
                 p.shop_name,
                 p.phone,
                 p.avatar_url
-             FROM users u
-             LEFT JOIN user_profiles p ON p.user_id = u.id
-             WHERE u.email = $1`,
+            FROM users u
+            LEFT JOIN user_profiles p ON p.user_id = u.id
+            WHERE u.email = $1`,
             [email]
         );
 
@@ -130,6 +144,7 @@ app.post('/api/login', async (req, res) => {
                 id: user.id,
                 email: user.email,
                 role: user.role,
+                company_id: user.company_id,
                 display_name: user.display_name,
                 shop_name: user.shop_name,
                 phone: user.phone,
@@ -150,10 +165,6 @@ app.get('/join', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'join.html'));
 })
 
-app.get('/track', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'track.html'));
-})
-
 app.get('/logs', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'logs.html'));
 })
@@ -162,12 +173,14 @@ app.get('/settings', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'settings.html'))
 })
 
-app.get('/admin', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'admin.html'))
-})
-
 app.get('/orders', async (req, res) => {
     try {
+        const { company_id } = req.query;
+
+        if (!company_id) {
+            return res.status(400).json({ error: 'company_id required' });
+        }
+
         const result = await pool.query(`
             SELECT
                 id,
@@ -187,7 +200,8 @@ app.get('/orders', async (req, res) => {
                 crush,
                 note
             FROM orders
-        `);
+            WHERE company_id = $1
+        `, [company_id]);
         res.json(result.rows);
     } catch (error) {
         console.error('Ошибка при получении заказов:', error);
@@ -213,8 +227,17 @@ app.post('/orders', async (req, res) => {
             deadline,
             crush,
             note,
-            user_id
+            user_id,
+            company_id
         } = req.body;
+
+        if (!company_id) {
+            return res.status(400).json({ error: 'company_id required' });
+        }
+
+        if (!user_id) {
+            return res.status(400).json({ error: 'user_id required' });
+        }
 
         const result = await pool.query(
             `INSERT INTO orders
@@ -233,9 +256,11 @@ app.post('/orders', async (req, res) => {
                 acceptDate,
                 deadline,
                 crush,
-                note
+                note,
+                user_id,
+                company_id
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
             RETURNING *`,
             [
                 phone,
@@ -252,14 +277,17 @@ app.post('/orders', async (req, res) => {
                 acceptDate,
                 deadline,
                 crush,
-                note
+                note,
+                user_id,
+                company_id
             ]
         );
 
         const order = result.rows[0];
 
         await writeLog({
-            user_id: user_id || null,
+            company_id,
+            user_id,
             entity_type: 'order',
             entity_id: order.id,
             action: 'create',
@@ -283,12 +311,17 @@ app.post('/orders', async (req, res) => {
 app.delete('/orders/:id', async (req, res) => {
     try {
         const id = Number(req.params.id);
+        const company_id = Number(req.query.company_id || req.body.company_id);
+
+        if (!company_id) {
+            return res.status(400).json({ error: 'company_id required' });
+        }
 
         const beforeResult = await pool.query(
             `SELECT id, customer, worker, model, status, price
              FROM orders
-             WHERE id = $1`,
-            [id]
+             WHERE id = $1 AND company_id = $2`,
+            [id, company_id]
         );
 
         const before = beforeResult.rows[0];
@@ -298,11 +331,12 @@ app.delete('/orders/:id', async (req, res) => {
         }
 
         await pool.query(
-            'DELETE FROM orders WHERE id = $1',
-            [id]
+            'DELETE FROM orders WHERE id = $1 AND company_id = $2',
+            [id, company_id]
         );
 
         await writeLog({
+            company_id,
             user_id: null,
             entity_type: 'order',
             entity_id: id,
@@ -338,8 +372,13 @@ app.put('/orders/:id', async (req, res) => {
             deadline,
             crush,
             note,
-            user_id
+            user_id,
+            company_id
         } = req.body;
+
+        if (!company_id) {
+            return res.status(400).json({ error: 'company_id required' });
+        }
 
         const beforeResult = await pool.query(
             `SELECT
@@ -347,8 +386,8 @@ app.put('/orders/:id', async (req, res) => {
                 hasDevice, hasCharger, status, price, pre,
                 acceptDate, deadline, crush, note
              FROM orders
-             WHERE id = $1`,
-            [id]
+             WHERE id = $1 AND company_id = $2`,
+            [id, company_id]
         );
 
         const before = beforeResult.rows[0];
@@ -370,7 +409,7 @@ app.put('/orders/:id', async (req, res) => {
                  deadline = $13,
                  crush = $14,
                  note = $15
-             WHERE id = $16
+             WHERE id = $16 AND company_id = $17
              RETURNING
                  id,
                  phone,
@@ -404,13 +443,15 @@ app.put('/orders/:id', async (req, res) => {
                 deadline,
                 crush,
                 note,
-                id
+                id,
+                company_id
             ]
         );
 
         const updatedOrder = result.rows[0];
 
         await writeLog({
+            company_id,
             user_id: user_id || null,
             entity_type: 'order',
             entity_id: updatedOrder.id,
@@ -439,11 +480,13 @@ app.get('/api/profile/:id', async (req, res) => {
                 u.email,
                 p.display_name,
                 p.shop_name,
+                p.city,
+                p.address,
                 p.phone,
                 p.avatar_url
-             FROM users u
-             LEFT JOIN user_profiles p ON p.user_id = u.id
-             WHERE u.id = $1`,
+            FROM users u
+            LEFT JOIN user_profiles p ON p.user_id = u.id
+            WHERE u.id = $1`,
             [userId]
         );
 
@@ -461,83 +504,15 @@ app.get('/api/profile/:id', async (req, res) => {
     }
 });
 
-app.get('/api/trackings', async (req, res) => {
+app.get('/api/workers/:companyId', async (req, res) => {
     try {
-        const localResult = await pool.query(`
-            SELECT id, tracking_number, courier_code, title, status_text, created_at
-            FROM trackings
-            ORDER BY created_at DESC
-        `);
-
-        const localTrackings = localResult.rows;
-
-        const headers = {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json',
-            'Tracking-Api-Key': TrackingMore
-        };
-
-        const updatedTrackings = [];
-
-        for (const item of localTrackings) {
-            try {
-                const response = await fetch('https://api.trackingmore.com/v4/trackings/get', {
-                    method: 'POST',
-                    headers,
-                    body: JSON.stringify({
-                        tracking_numbers: [item.tracking_number],
-                        courier_code: item.courier_code,
-                        page: 1,
-                        limit: 1
-                    })
-                });
-
-                const data = await response.json();
-
-                if (!response.ok) {
-                    updatedTrackings.push(item);
-                    continue;
-                }
-
-                const apiItem =
-                    data?.data?.items?.[0] ||
-                    data?.data?.[0] ||
-                    null;
-
-                const freshTitle = apiItem?.title || item.title || 'Посылка';
-                const freshStatus = apiItem?.status_text || item.status_text || 'Статус неизвестен';
-
-                const saved = await pool.query(
-                    `UPDATE trackings
-                     SET title = $1,
-                         status_text = $2
-                     WHERE id = $3
-                     RETURNING id, tracking_number, courier_code, title, status_text, created_at`,
-                    [freshTitle, freshStatus, item.id]
-                );
-
-                updatedTrackings.push(saved.rows[0]);
-            } catch (err) {
-                console.error(`Ошибка обновления трека ${item.tracking_number}:`, err);
-                updatedTrackings.push(item);
-            }
-        }
-
-        res.json({ data: updatedTrackings });
-    } catch (error) {
-        console.error('Ошибка получения отслеживаний:', error);
-        res.status(500).json({ error: 'Ошибка сервера' });
-    }
-});
-
-app.get('/api/workers/:userId', async (req, res) => {
-    try {
-        const userId = Number(req.params.userId);
+        const companyId = Number(req.params.companyId);
 
         const result = await pool.query(
             `SELECT
                 id,
                 user_id,
+                company_id,
                 name,
                 role,
                 phone,
@@ -546,9 +521,9 @@ app.get('/api/workers/:userId', async (req, res) => {
                 created_at,
                 updated_at
              FROM workers
-             WHERE user_id = $1
+             WHERE company_id = $1
              ORDER BY id ASC`,
-            [userId]
+            [companyId]
         );
 
         res.json(result.rows);
@@ -558,107 +533,10 @@ app.get('/api/workers/:userId', async (req, res) => {
     }
 });
 
-app.post('/api/trackings/create', async (req, res) => {
-    try {
-        const { tracking_number } = req.body;
-
-        if (!tracking_number) {
-            return res.status(400).json({ error: 'tracking_number обязателен' });
-        }
-
-        const headers = {
-            Accept: 'application/json',
-            'Content-Type': 'application/json',
-            'Tracking-Api-Key': TrackingMore
-        };
-
-        const detectResponse = await fetch('https://api.trackingmore.com/v4/couriers/detect', {
-            method: 'POST',
-            headers,
-            body: JSON.stringify({ tracking_number })
-        });
-
-        const detectData = await detectResponse.json();
-        console.log('detectData:', JSON.stringify(detectData, null, 2));
-
-        if (!detectResponse.ok) {
-            return res.status(detectResponse.status).json({
-                error: 'Не удалось определить службу доставки',
-                details: detectData
-            });
-        }
-
-        const couriers = detectData?.data || [];
-        const firstCourier = couriers[0];
-
-        if (!firstCourier?.courier_code) {
-            return res.status(400).json({
-                error: 'TrackingMore не смог определить courier_code',
-                details: detectData
-            });
-        }
-
-        const createResponse = await fetch('https://api.trackingmore.com/v4/trackings/create', {
-            method: 'POST',
-            headers,
-            body: JSON.stringify({
-                tracking_number,
-                courier_code: firstCourier.courier_code
-            })
-        });
-
-        const createData = await createResponse.json();
-        console.log('createData:', JSON.stringify(createData, null, 2));
-
-        if (!createResponse.ok) {
-            return res.status(createResponse.status).json({
-                error: 'Не удалось создать отслеживание',
-                details: createData
-            });
-        }
-
-        const trackingItem = createData?.data?.items?.[0] || createData?.data || {};
-
-        console.log('Перед INSERT:', {
-            tracking_number,
-            courier_code: firstCourier.courier_code,
-            title: trackingItem.title || 'Посылка',
-            status_text: trackingItem.status_text || 'Создано'
-        });
-
-        const saved = await pool.query(
-            `INSERT INTO trackings (tracking_number, courier_code, title, status_text)
-             VALUES ($1, $2, $3, $4)
-             ON CONFLICT (tracking_number)
-             DO UPDATE SET
-                courier_code = EXCLUDED.courier_code,
-                title = EXCLUDED.title,
-                status_text = EXCLUDED.status_text
-             RETURNING *`,
-            [
-                tracking_number,
-                firstCourier.courier_code,
-                trackingItem.title || 'Посылка',
-                trackingItem.status_text || 'Создано'
-            ]
-        );
-
-        console.log('После INSERT:', saved.rows[0]);
-
-        res.json(saved.rows[0]);
-    } catch (error) {
-        console.error('TrackingMore error full:', error);
-        res.status(500).json({
-            error: 'Ошибка сервера',
-            details: error.message
-        });
-    }
-});
-
 app.put('/api/profile/:id', async (req, res) => {
     try {
         const userId = Number(req.params.id);
-        const { display_name, shop_name, phone } = req.body;
+        const { display_name, shop_name, city, address, phone } = req.body;
 
         if (!display_name) {
             return res.status(400).json({
@@ -666,10 +544,21 @@ app.put('/api/profile/:id', async (req, res) => {
             });
         }
 
+        const userResult = await pool.query(
+            `SELECT company_id FROM users WHERE id = $1`,
+            [userId]
+        );
+
+        if (userResult.rows.length === 0) {
+            return res.status(404).json({ error: 'Пользователь не найден' });
+        }
+
+        const company_id = userResult.rows[0].company_id;
+
         const beforeResult = await pool.query(
-            `SELECT display_name, shop_name, phone
-             FROM user_profiles
-             WHERE user_id = $1`,
+            `SELECT display_name, shop_name, city, address, phone
+            FROM user_profiles
+            WHERE user_id = $1`,
             [userId]
         );
 
@@ -677,14 +566,18 @@ app.put('/api/profile/:id', async (req, res) => {
 
         const result = await pool.query(
             `UPDATE user_profiles
-             SET display_name = $1,
-                 shop_name = $2,
-                 phone = $3
-             WHERE user_id = $4
-             RETURNING id, user_id, display_name, shop_name, phone, avatar_url, created_at`,
+            SET display_name = $1,
+                shop_name = $2,
+                city = $3,
+                address = $4,
+                phone = $5
+            WHERE user_id = $6
+            RETURNING id, user_id, company_id, display_name, shop_name, city, address, phone, avatar_url, created_at`,
             [
                 display_name,
                 shop_name || null,
+                city || null,
+                address || null,
                 phone || null,
                 userId
             ]
@@ -699,6 +592,7 @@ app.put('/api/profile/:id', async (req, res) => {
         }
 
         await writeLog({
+            company_id,
             user_id: userId,
             entity_type: 'profile',
             entity_id: profile.id,
@@ -709,6 +603,8 @@ app.put('/api/profile/:id', async (req, res) => {
                 after: {
                     display_name: profile.display_name,
                     shop_name: profile.shop_name,
+                    city: profile.city,
+                    address: profile.address,
                     phone: profile.phone
                 }
             }
@@ -724,172 +620,23 @@ app.put('/api/profile/:id', async (req, res) => {
     }
 });
 
-app.put('/api/workers/:id', async (req, res) => {
-    try {
-        const id = Number(req.params.id);
-        const { name, role, phone, email, is_active } = req.body;
-
-        if (!name) {
-            return res.status(400).json({
-                error: 'name обязателен'
-            });
-        }
-
-        const result = await pool.query(
-            `UPDATE workers
-             SET name = $1,
-                 role = $2,
-                 phone = $3,
-                 email = $4,
-                 is_active = $5,
-                 updated_at = NOW()
-             WHERE id = $6
-             RETURNING
-                id,
-                user_id,
-                name,
-                role,
-                phone,
-                email,
-                is_active,
-                created_at,
-                updated_at`,
-            [
-                name.trim(),
-                role || 'Сотрудник',
-                phone || null,
-                email || null,
-                Boolean(is_active),
-                id
-            ]
-        );
-
-        const worker = result.rows[0];
-
-        if (!worker) {
-            return res.status(404).json({
-                error: 'Сотрудник не найден'
-            });
-        }
-
-        res.json(worker);
-    } catch (error) {
-        if (error.code === '23505') {
-            return res.status(409).json({
-                error: 'Сотрудник с таким именем уже существует'
-            });
-        }
-
-        console.error('Ошибка обновления сотрудника:', error);
-        res.status(500).json({ error: 'Ошибка сервера' });
-    }
-});
-
-app.put('/api/workers/:id', async (req, res) => {
-    try {
-        const id = Number(req.params.id);
-        const { name, role, phone, email, is_active } = req.body;
-
-        if (!name) {
-            return res.status(400).json({
-                error: 'name обязателен'
-            });
-        }
-
-        const result = await pool.query(
-            `UPDATE workers
-             SET name = $1,
-                 role = $2,
-                 phone = $3,
-                 email = $4,
-                 is_active = $5,
-                 updated_at = NOW()
-             WHERE id = $6
-             RETURNING
-                id,
-                user_id,
-                name,
-                role,
-                phone,
-                email,
-                is_active,
-                created_at,
-                updated_at`,
-            [
-                name.trim(),
-                role || 'Сотрудник',
-                phone || null,
-                email || null,
-                Boolean(is_active),
-                id
-            ]
-        );
-
-        const worker = result.rows[0];
-
-        if (!worker) {
-            return res.status(404).json({
-                error: 'Сотрудник не найден'
-            });
-        }
-
-        res.json(worker);
-    } catch (error) {
-        if (error.code === '23505') {
-            return res.status(409).json({
-                error: 'Сотрудник с таким именем уже существует'
-            });
-        }
-
-        console.error('Ошибка обновления сотрудника:', error);
-        res.status(500).json({ error: 'Ошибка сервера' });
-    }
-});
-
-app.get('/api/workers/:userId', async (req, res) => {
-    try {
-        const userId = Number(req.params.userId);
-
-        const result = await pool.query(
-            `SELECT
-                id,
-                user_id,
-                name,
-                role,
-                phone,
-                email,
-                is_active,
-                created_at,
-                updated_at
-             FROM workers
-             WHERE user_id = $1
-             ORDER BY id ASC`,
-            [userId]
-        );
-
-        res.json(result.rows);
-    } catch (error) {
-        console.error('Ошибка загрузки сотрудников:', error);
-        res.status(500).json({ error: 'Ошибка сервера' });
-    }
-});
-
 app.post('/api/workers', async (req, res) => {
     try {
-        const { user_id, name, role, phone, email } = req.body;
+        const { company_id, user_id, name, role, phone, email } = req.body;
 
-        if (!user_id || !name) {
+        if (!company_id || !name) {
             return res.status(400).json({
-                error: 'user_id и name обязательны'
+                error: 'company_id и name обязательны'
             });
         }
 
         const result = await pool.query(
-            `INSERT INTO workers (user_id, name, role, phone, email)
-             VALUES ($1, $2, $3, $4, $5)
+            `INSERT INTO workers (user_id, company_id, name, role, phone, email)
+             VALUES ($1, $2, $3, $4, $5, $6)
              RETURNING
                 id,
                 user_id,
+                company_id,
                 name,
                 role,
                 phone,
@@ -898,7 +645,8 @@ app.post('/api/workers', async (req, res) => {
                 created_at,
                 updated_at`,
             [
-                user_id,
+                user_id || null,
+                company_id,
                 name.trim(),
                 role || 'Сотрудник',
                 phone || null,
@@ -916,12 +664,21 @@ app.post('/api/workers', async (req, res) => {
 app.put('/api/workers/:id', async (req, res) => {
     try {
         const id = Number(req.params.id);
-        const { name, role, phone, email, is_active } = req.body;
+        const { company_id, name, role, phone, email, is_active } = req.body;
 
-        if (!name) {
+        if (!company_id || !name) {
             return res.status(400).json({
-                error: 'name обязателен'
+                error: 'company_id и name обязательны'
             });
+        }
+
+        const checkResult = await pool.query(
+            'SELECT id FROM workers WHERE id = $1 AND company_id = $2',
+            [id, company_id]
+        );
+
+        if (!checkResult.rows[0]) {
+            return res.status(404).json({ error: 'Сотрудник не найден или доступ запрещён' });
         }
 
         const result = await pool.query(
@@ -932,10 +689,11 @@ app.put('/api/workers/:id', async (req, res) => {
                  email = $4,
                  is_active = $5,
                  updated_at = NOW()
-             WHERE id = $6
+             WHERE id = $6 AND company_id = $7
              RETURNING
                 id,
                 user_id,
+                company_id,
                 name,
                 role,
                 phone,
@@ -949,7 +707,8 @@ app.put('/api/workers/:id', async (req, res) => {
                 phone || null,
                 email || null,
                 Boolean(is_active),
-                id
+                id,
+                company_id
             ]
         );
 
@@ -967,14 +726,19 @@ app.put('/api/workers/:id', async (req, res) => {
 app.delete('/api/workers/:id', async (req, res) => {
     try {
         const id = Number(req.params.id);
+        const { company_id } = req.body;
+
+        if (!company_id) {
+            return res.status(400).json({ error: 'company_id обязателен' });
+        }
 
         const result = await pool.query(
-            'DELETE FROM workers WHERE id = $1 RETURNING id',
-            [id]
+            'DELETE FROM workers WHERE id = $1 AND company_id = $2 RETURNING id',
+            [id, company_id]
         );
 
         if (!result.rows[0]) {
-            return res.status(404).json({ error: 'Сотрудник не найден' });
+            return res.status(404).json({ error: 'Сотрудник не найден или доступ запрещён' });
         }
 
         res.json({ message: 'Сотрудник удалён' });
@@ -985,16 +749,16 @@ app.delete('/api/workers/:id', async (req, res) => {
 });
 
 
-app.get('/api/devices/:userId', async (req, res) => {
+app.get('/api/devices/:companyId', async (req, res) => {
     try {
-        const userId = Number(req.params.userId);
+        const companyId = Number(req.params.companyId);
 
         const result = await pool.query(
-            `SELECT id, user_id, name, is_active, created_at
+            `SELECT id, user_id, company_id, name, is_active, created_at
              FROM devices
-             WHERE user_id = $1
+             WHERE company_id = $1
              ORDER BY id ASC`,
-            [userId]
+            [companyId]
         );
 
         res.json(result.rows);
@@ -1006,19 +770,19 @@ app.get('/api/devices/:userId', async (req, res) => {
 
 app.post('/api/devices', async (req, res) => {
     try {
-        const { user_id, name } = req.body;
+        const { company_id, user_id, name } = req.body;
 
-        if (!user_id || !name) {
+        if (!company_id || !name) {
             return res.status(400).json({
-                error: 'user_id и name обязательны'
+                error: 'company_id и name обязательны'
             });
         }
 
         const result = await pool.query(
-            `INSERT INTO devices (user_id, name)
-             VALUES ($1, $2)
-             RETURNING id, user_id, name, is_active, created_at`,
-            [user_id, name.trim()]
+            `INSERT INTO devices (user_id, company_id, name)
+             VALUES ($1, $2, $3)
+             RETURNING id, user_id, company_id, name, is_active, created_at`,
+            [user_id || null, company_id, name.trim()]
         );
 
         res.status(201).json(result.rows[0]);
@@ -1037,15 +801,20 @@ app.post('/api/devices', async (req, res) => {
 app.delete('/api/devices/:id', async (req, res) => {
     try {
         const id = Number(req.params.id);
+        const { company_id } = req.body;
+
+        if (!company_id) {
+            return res.status(400).json({ error: 'company_id обязателен' });
+        }
 
         const result = await pool.query(
-            'DELETE FROM devices WHERE id = $1 RETURNING id',
-            [id]
+            'DELETE FROM devices WHERE id = $1 AND company_id = $2 RETURNING id',
+            [id, company_id]
         );
 
         if (!result.rows[0]) {
             return res.status(404).json({
-                error: 'Устройство не найдено'
+                error: 'Устройство не найдено или доступ запрещён'
             });
         }
 
@@ -1056,87 +825,16 @@ app.delete('/api/devices/:id', async (req, res) => {
     }
 });
 
-app.get('/api/devices/:userId', async (req, res) => {
+app.get('/api/statuses/:companyId', async (req, res) => {
     try {
-        const userId = Number(req.params.userId);
+        const companyId = Number(req.params.companyId);
 
         const result = await pool.query(
-            `SELECT id, user_id, name, is_active, created_at
-             FROM devices
-             WHERE user_id = $1
-             ORDER BY id ASC`,
-            [userId]
-        );
-
-        res.json(result.rows);
-    } catch (error) {
-        console.error('Ошибка загрузки устройств:', error);
-        res.status(500).json({ error: 'Ошибка сервера' });
-    }
-});
-
-app.post('/api/devices', async (req, res) => {
-    try {
-        const { user_id, name } = req.body;
-
-        if (!user_id || !name) {
-            return res.status(400).json({
-                error: 'user_id и name обязательны'
-            });
-        }
-
-        const result = await pool.query(
-            `INSERT INTO devices (user_id, name)
-             VALUES ($1, $2)
-             RETURNING id, user_id, name, is_active, created_at`,
-            [user_id, name.trim()]
-        );
-
-        res.status(201).json(result.rows[0]);
-    } catch (error) {
-        if (error.code === '23505') {
-            return res.status(409).json({
-                error: 'Такое устройство уже существует'
-            });
-        }
-
-        console.error('Ошибка добавления устройства:', error);
-        res.status(500).json({ error: 'Ошибка сервера' });
-    }
-});
-
-app.delete('/api/devices/:id', async (req, res) => {
-    try {
-        const id = Number(req.params.id);
-
-        const result = await pool.query(
-            'DELETE FROM devices WHERE id = $1 RETURNING id',
-            [id]
-        );
-
-        if (!result.rows[0]) {
-            return res.status(404).json({
-                error: 'Устройство не найдено'
-            });
-        }
-
-        res.json({ message: 'Устройство удалено' });
-    } catch (error) {
-        console.error('Ошибка удаления устройства:', error);
-        res.status(500).json({ error: 'Ошибка сервера' });
-    }
-});
-
-app.get('/api/statuses/:userId', async (req, res) => {
-    try {
-        const userId = Number(req.params.userId);
-
-        const result = await pool.query(
-            `SELECT id, user_id, name, created_at
+            `SELECT id, user_id, company_id, name, created_at
              FROM statuses
-             WHERE user_id = $1
+             WHERE company_id = $1
              ORDER BY id ASC`,
-            [userId]
+            [companyId]
         );
 
         res.json(result.rows);
@@ -1148,19 +846,19 @@ app.get('/api/statuses/:userId', async (req, res) => {
 
 app.post('/api/statuses', async (req, res) => {
     try {
-        const { user_id, name } = req.body;
+        const { company_id, user_id, name } = req.body;
 
-        if (!user_id || !name) {
+        if (!company_id || !name) {
             return res.status(400).json({
-                error: 'user_id и name обязательны'
+                error: 'company_id и name обязательны'
             });
         }
 
         const result = await pool.query(
-            `INSERT INTO statuses (user_id, name)
-             VALUES ($1, $2)
-             RETURNING id, user_id, name, created_at`,
-            [user_id, name.trim()]
+            `INSERT INTO statuses (user_id, company_id, name)
+             VALUES ($1, $2, $3)
+             RETURNING id, user_id, company_id, name, created_at`,
+            [user_id || null, company_id, name.trim()]
         );
 
         res.status(201).json(result.rows[0]);
@@ -1179,15 +877,20 @@ app.post('/api/statuses', async (req, res) => {
 app.delete('/api/statuses/:id', async (req, res) => {
     try {
         const id = Number(req.params.id);
+        const { company_id } = req.body;
+
+        if (!company_id) {
+            return res.status(400).json({ error: 'company_id обязателен' });
+        }
 
         const result = await pool.query(
-            'DELETE FROM statuses WHERE id = $1 RETURNING id',
-            [id]
+            'DELETE FROM statuses WHERE id = $1 AND company_id = $2 RETURNING id',
+            [id, company_id]
         );
 
         if (!result.rows[0]) {
             return res.status(404).json({
-                error: 'Статус не найден'
+                error: 'Статус не найден или доступ запрещён'
             });
         }
 
@@ -1199,6 +902,7 @@ app.delete('/api/statuses/:id', async (req, res) => {
 });
 
 async function writeLog({
+    company_id,
     user_id = null,
     entity_type,
     entity_id = null,
@@ -1208,9 +912,10 @@ async function writeLog({
 }) {
     try {
         await pool.query(
-            `INSERT INTO logs (user_id, entity_type, entity_id, action, title, details)
-             VALUES ($1, $2, $3, $4, $5, $6)`,
+            `INSERT INTO logs (company_id, user_id, entity_type, entity_id, action, title, details)
+             VALUES ($1, $2, $3, $4, $5, $6, $7)`,
             [
+                company_id,
                 user_id,
                 entity_type,
                 entity_id,
@@ -1224,8 +929,10 @@ async function writeLog({
     }
 }
 
-app.get('/api/logs/:userId', async (req, res) => {
+app.get('/api/logs/:companyId', async (req, res) => {
     try {
+        const companyId = Number(req.params.companyId);
+
         const result = await pool.query(
             `SELECT
                 l.id,
@@ -1238,15 +945,51 @@ app.get('/api/logs/:userId', async (req, res) => {
                 l.created_at,
                 u.email,
                 p.display_name
-             FROM logs l
-             LEFT JOIN users u ON u.id = l.user_id
-             LEFT JOIN user_profiles p ON p.user_id = l.user_id
-             ORDER BY l.created_at DESC, l.id DESC`
+            FROM logs l
+            LEFT JOIN users u ON u.id = l.user_id
+            LEFT JOIN user_profiles p ON p.user_id = l.user_id
+            WHERE l.company_id = $1
+            ORDER BY l.created_at DESC, l.id DESC`,
+            [companyId]
         );
 
         res.json(result.rows);
     } catch (error) {
         console.error('Ошибка загрузки логов:', error);
+        res.status(500).json({ error: 'Ошибка сервера' });
+    }
+});
+
+app.get('/orders/:companyId', async (req, res) => {
+    try {
+        const companyId = Number(req.params.companyId);
+
+        const result = await pool.query(`
+            SELECT
+                id,
+                phone,
+                customer,
+                worker,
+                device,
+                model,
+                SN AS "SN",
+                hasDevice AS "hasDevice",
+                hasCharger AS "hasCharger",
+                status,
+                price,
+                pre,
+                acceptDate AS "acceptDate",
+                deadline,
+                crush,
+                note
+            FROM orders
+            WHERE company_id = $1
+            ORDER BY id DESC
+        `, [companyId]);
+
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Ошибка при получении заказов:', error);
         res.status(500).json({ error: 'Ошибка сервера' });
     }
 });

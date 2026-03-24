@@ -1,31 +1,16 @@
 let editIndex = null; /* переключатель режима редактирования */
-let sortField = null; /* поле сортировки */
 let sortDir = 1; /* сортировка по возрастанию или убыванию */
 let oldVisual = null;
 let isSyncling = false; /* синхронизация дат */
-let link = document.getElementById('data-theme');
-
-const isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-
-if (isDark) themeChange();
+let statuses = []; /* динамический список статусов */
 
 const user = JSON.parse(localStorage.getItem('user'));
 
-if (!user) {
-    window.location.href = '/join';
-}
-
-const emailElement = document.getElementById('userEmail');
-const userElement = document.getElementById('userName');
-
-if (emailElement) {
-    emailElement.textContent = user.email;
-    userElement.textContent = user.display_name;
-}
+if (!user) window.location.href = '/join';
 
 async function loadWorkersToSelect() {
     try {
-        const response = await fetch(`/api/workers/${user.id}`);
+        const response = await fetch(`/api/workers/${user.company_id}`);
         const workers = await response.json();
 
         if (!response.ok) {
@@ -49,6 +34,58 @@ async function loadWorkersToSelect() {
 
     } catch (error) {
         console.error('Ошибка загрузки сотрудников:', error);
+    }
+}
+
+function getStatusOptionsHtml(selectedStatus = '') {
+    const fallback = [
+        'Принят',
+        'В работе',
+        'Ждёт запчастей',
+        'На согласовании',
+        'Без ремонта',
+        'Сделан',
+        'Отменён'
+    ];
+
+    const list = Array.isArray(statuses) && statuses.length ? statuses : fallback;
+
+    return list
+        .map(status => `
+            <option value="${status.replace(/"/g, '&quot;')}" ${status === selectedStatus ? 'selected' : ''}>
+                ${status}
+            </option>`)
+        .join('');
+}
+
+function renderStatusSelectors() {
+    const statusSelect = document.getElementById('statusInput');
+    const filterSelect = document.getElementById('filter');
+
+    if (statusSelect) {
+        statusSelect.innerHTML = getStatusOptionsHtml();
+    }
+
+    if (filterSelect) {
+        filterSelect.innerHTML = '<option>Все статусы</option>' + getStatusOptionsHtml();
+    }
+}
+
+async function loadStatuses() {
+    try {
+        const response = await fetch(`/api/statuses/${user.company_id}`);
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || 'Ошибка загрузки статусов');
+        }
+
+        statuses = Array.isArray(data) ? data.map(s => s.name) : [];
+        renderStatusSelectors();
+    } catch (error) {
+        console.error('Ошибка загрузки статусов:', error);
+        statuses = [];
+        renderStatusSelectors();
     }
 }
 
@@ -119,15 +156,16 @@ dateInput.addEventListener('input', function () {
     isSyncling = false;
 });
 
-/* Локальная память */
+/* Данные и слушатели */
 let tasks = [];
 
 complete.addEventListener('change', function(event) { renderTasks() });
 search.addEventListener('input', renderTasks);
 document.addEventListener('DOMContentLoaded', () => { /* загрузка страницы */
-    loadTasks(); /* обработка памяти */
+    loadTasks(); /* загрузка задач с сервера */
     loadWorkersToSelect();
     loadDevicesToSelect();
+    loadStatuses();
 });
 
 modalButton.onclick = () => {
@@ -162,7 +200,6 @@ modalButton.onclick = () => {
 };
 
 /* сортировка */
-/*document.getElementById('numberHead').onclick = () => sortTasks('number', document.getElementById('numberHead'));*/
 document.getElementById('modelHead').onclick = () => sortTasks('model', document.getElementById('modelHead'));
 document.getElementById('statusHead').onclick = () => sortTasks('status', document.getElementById('statusHead'));
 document.getElementById('bugHead').onclick = () => sortTasks('crush', document.getElementById('bugHead'));
@@ -185,12 +222,13 @@ function addTask() {
 
     const task = {
         user_id: user.id,
-        phone: phoneInput.value.trim(),
-        customer: customerInput.value.trim(),
-        worker: workerInput.value.trim(),
+        company_id: user.company_id,
+        phone: phoneSecurity,
+        customer: customerSecurity,
+        worker: workerSecurity,
         device: deviceInput.value,
-        model: modelInput.value.trim(),
-        SN: SNInput.value.trim(),
+        model: modelSecurity,
+        SN: SNSecurity,
         hasDevice: deviceBox.checked,
         hasCharger: chargeryBox.checked,
         status: statusInput.value,
@@ -198,11 +236,11 @@ function addTask() {
         pre: Number(preInput.value) || 0,
         acceptDate: dateInput.value,
         deadline: Number(deadline.value) || 0,
-        crush: crushInput.value.trim(),
-        note: noteInput.value.trim()
+        crush: crushSecurity,
+        note: noteSecurity
     };
 
-    fetch('http://localhost:3000/orders', {
+    fetch('/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(task)
@@ -264,19 +302,11 @@ function renderTasks() {
         const daysLeft = Number(task.deadline) || 0;
         tr.innerHTML = /* создание ячеек */ `
         <div class="tdNumber">${index + 1}</div>
-        <div class="tdModel">${task.model}</div>
-        <div class="tdStatus"><select class="statusInput">
-            <option ${task.status === 'Принят' ? 'selected' : ''}>Принят</option>
-            <option ${task.status === 'В работе' ? 'selected' : ''}>В работе</option>
-            <option ${task.status === 'Ждёт запчастей' ? 'selected' : ''}>Ждёт запчастей</option>
-            <option ${task.status === 'На согласовании' ? 'selected' : ''}>На согласовании</option>
-            <option ${task.status === 'Без ремонта' ? 'selected' : ''}>Без ремонта</option>
-            <option ${task.status === 'Сделан' ? 'selected' : ''}>Сделан</option>
-            <option ${task.status === 'Отменён' ? 'selected' : ''}>Отменён</option>
-        </select></div>
-        <div class="tdBug">${task.crush}</div>
+        <div class="tdModel">${returnHTML(task.model)}</div>
+        <div class="tdStatus"><select class="statusInput">${getStatusOptionsHtml(task.status)}</select></div>
+        <div class="tdBug">${returnHTML(task.crush)}</div>
         <div class="tdPrice">${task.price}</div>
-        <div class="tdWorker">${task.worker}</div>
+        <div class="tdWorker">${returnHTML(task.worker)}</div>
         <div class="tdBegin">${formattedDate(task.acceptDate)}</div>
         <div class="days-cell">${daysLeft} дн.</div>
         <div class="tdEdit">
@@ -290,7 +320,7 @@ function renderTasks() {
         select.addEventListener('change', function () {
             const newStatus = this.value;
 
-            fetch(`http://localhost:3000/orders/${task.id}`, {
+            fetch(`/orders/${task.id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -338,8 +368,12 @@ function editTask(id) {
 /* удаление задачи */
 function deleteTask(id) {
 if (confirm("Удалить?")) {
-    fetch(`http://localhost:3000/orders/${id}`, {
-        method: 'DELETE'
+    fetch(`/orders/${id}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            company_id: user.company_id
+        })
     })
     .then(() => {
         loadTasks();
@@ -409,7 +443,7 @@ function clearForm() {
     SNInput.value = '';
     deviceBox.checked = false;
     chargeryBox.checked = false;
-    statusInput.value = 'Принят';
+    statusInput.value = (statuses.length ? statuses[0] : 'Принят');
     priceInput.value = '';
     preInput.value = '';
     deadline.value = '';
@@ -423,9 +457,6 @@ function clearForm() {
 
 /* сортировка */
 function sortTasks(field, visual) {
-    if (field == 'number') {
-        sortField = null;
-    }
 
     if (oldVisual) {
         oldVisual.textContent = oldVisual.textContent.replace('⬇️', '');
@@ -452,22 +483,8 @@ function sortTasks(field, visual) {
     renderTasks();
 }
 
-/* переключение темы */
-function themeChange() {
-    let lightTheme = "light.css";
-    let darkTheme = "dark.css";
-
-    let currTheme = link.getAttribute("href");
-    
-    if (currTheme == lightTheme) {
-        link.setAttribute("href", darkTheme);
-    } else {
-        link.setAttribute("href", lightTheme);
-    }
-}
-
 function loadTasks() {
-    let url = 'http://localhost:3000/orders';
+    let url = `/orders?company_id=${user.company_id}`;
 
     fetch(url)
         .then(res => res.json())
@@ -490,6 +507,7 @@ function updateTask(id) {
     const updatedTask = {
         id: id,
         user_id: user.id,
+        company_id: user.company_id,
         phone: phoneSecurity,
         customer: customerSecurity,
         worker: workerSecurity,
@@ -507,7 +525,7 @@ function updateTask(id) {
         note: noteSecurity
     };
 
-    fetch(`http://localhost:3000/orders/${id}`, {
+    fetch(`/orders/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updatedTask)
@@ -522,7 +540,7 @@ function updateTask(id) {
 
 async function loadDevicesToSelect() {
     try {
-        const response = await fetch(`/api/devices/${user.id}`);
+        const response = await fetch(`/api/devices/${user.company_id}`);
         const devices = await response.json();
 
         if (!response.ok) {

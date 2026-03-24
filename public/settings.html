@@ -3,7 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="css/light.css" id="data-theme">
     <link rel="stylesheet" href="css/settings.css">
     <link rel="stylesheet" href="css/uni.css">
     <link rel="stylesheet" href="css/mobile.css">
@@ -16,8 +15,8 @@
             <h1>CRM</h1>
         </div>
         <div id="nameShop">
-            <p style="color: white;">example@example.ru</p>
-            <p style="color: gray;">Магазин "Пример"</p>
+            <span id="userName"></span>
+            <span id="userEmail"></span>
         </div>
     </nav>
     <header class="parent">
@@ -28,13 +27,9 @@
     <main>
         <div id="sidebar">
             <p><button class="settings-tab active" data-tab="company">Компания</button></p>
-            <!--<p><button class="settings-tab" data-tab="receipts">Квитанции</button></p>-->
             <p><button class="settings-tab" data-tab="workers">Сотрудники</button></p>
             <p><button class="settings-tab" data-tab="devices">Устройства</button></p>
-            <p><button class="settings-tab" data-tab="lists">Списки</button></p>
             <p><button class="settings-tab" data-tab="statuses">Статусы</button></p>
-            <p><button class="settings-tab" data-tab="notifications">Уведомления</button></p>
-            <p><button class="settings-tab" data-tab="more">Ещё</button></p>
         </div>
 
         <div id="hm">
@@ -81,11 +76,6 @@
                 <div id="devicesList"></div>
             </section>
 
-            <!--<section class="settings-panel" id="tab-lists">
-                <h3>Списки</h3>
-                <p>Справочники и дополнительные списки.</p>
-            </section>-->
-
             <section class="settings-panel" id="tab-statuses">
                 <h3>Статусы</h3>
 
@@ -96,26 +86,14 @@
 
                 <div id="statusesList"></div>
             </section>
-
-            <section class="settings-panel" id="tab-notifications">
-                <h3>Уведомления</h3>
-                <p>SMS, email и прочие уведомления.</p>
-            </section>
-
-            <section class="settings-panel" id="tab-more">
-                <h3>Ещё</h3>
-                <p>Дополнительные настройки.</p>
-            </section>
         </div>
     </main>
     <div id="modal-menu">
         <div id="menu-window">
             <a href="/"><button>Список заказов</button></a>
-            <!--<a href="/track"><button>Отслеживание заказов</button></a>-->
             <a href="/settings"><button>Настройки</button></a>
             <a href="/logs"><button>Логи</button></a>
-            <a href="/admin"><button>Админ-панель</button></a>
-            <a href="/exit"><button>Выход</button></a>
+            <a id="logoutButton"><button>Выход</button></a>
         </div>
     </div>
 </body>
