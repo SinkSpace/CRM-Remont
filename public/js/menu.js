@@ -12,3 +12,13 @@ if (logoutButton) {
         window.location.href = '/join';
     });
 }
+
+const userJoin = JSON.parse(localStorage.getItem('user'));
+
+const emailElement = document.getElementById('userEmail');
+const userElement = document.getElementById('userName');
+
+if (emailElement) {
+    emailElement.textContent = userJoin.email;
+    userElement.textContent = userJoin.shop_name || userJoin.display_name;
+}
