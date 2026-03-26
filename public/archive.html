@@ -3,11 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <link rel="stylesheet" href="css/track.css">
+    <link rel="stylesheet" href="css/index.css">
     <link rel="stylesheet" href="css/uni.css">
     <link rel="stylesheet" href="css/mobile.css">
-    <title>CRM</title>
+    <title>Архив заказов</title>
 </head>
 <body>
     <nav class="parent">
@@ -15,21 +14,40 @@
             <img alt="Меню" src="menu.svg" id="menu">
             <h1>CRM</h1>
         </div>
+        <div>
+            <input id="search" placeholder="🔍" style="border-radius: 10px;">
+        </div>
         <div id="nameShop">
             <span id="userName"></span>
             <span id="userEmail"></span>
         </div>
     </nav>
+
     <header class="parent">
         <p style="visibility: hidden;">a</p>
-        <h2>Логи</h2>
+        <h2>Архив заказов</h2>
         <p style="visibility: hidden;">a</p>
     </header>
+
     <main>
-        <div id="hm">
-            <div id="logsList"></div>
-        </div>
+        <article id="archiveTable">
+            <section id="mainHead">
+                <div id="numberHead">№</div>
+                <div id="modelHead">Модель</div>
+                <div id="statusHead">Статус</div>
+                <div id="bugHead">Неисправность</div>
+                <div id="priceHead">Цена</div>
+                <div id="workerHead">Исполнитель</div>
+                <div id="dateBeginHead">Выдача</div>
+                <div id="dateHead">Архив</div>
+                <div id="editHead">Действия</div>
+            </section>
+        </article>
     </main>
+
+    <p><h1 id="noTask">Архив пуст</h1></p>
+    <p><h1 id="noSearch">Заказы не найдены</h1></p>
+
     <div id="modal-menu">
         <div id="menu-window">
             <a href="/"><button>Список заказов</button></a>
@@ -40,7 +58,6 @@
         </div>
     </div>
 </body>
-<script src="js/logs.js"></script>
+<script src="js/archive.js"></script>
 <script src="js/menu.js"></script>
-
 </html>

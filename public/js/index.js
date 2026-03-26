@@ -119,8 +119,8 @@ const priceInput = document.getElementById('priceInput');
 const noteInput = document.getElementById('noteInput');
 const dateInput = document.getElementById('dateInput');
 const deadline = document.getElementById('deadline');
-const deviceBox = document.getElementById('deviceBox');
-const chargeryBox = document.getElementById('chargeryBox');
+const togglePriceCalc = document.getElementById('togglePriceCalc');
+const priceCalcBox = document.getElementById('priceCalcBox');
 
 deadline.addEventListener('input', function () {
     if (isSyncling) return;
@@ -161,11 +161,24 @@ let tasks = [];
 
 complete.addEventListener('change', function(event) { renderTasks() });
 search.addEventListener('input', renderTasks);
-document.addEventListener('DOMContentLoaded', () => { /* загрузка страницы */
-    loadTasks(); /* загрузка задач с сервера */
+document.addEventListener('DOMContentLoaded', () => {
+    loadTasks();
     loadWorkersToSelect();
-    loadDevicesToSelect();
     loadStatuses();
+    loadDeviceHints();
+    deviceInput.addEventListener('input', () => loadDeviceHints(deviceInput.value));
+
+    if (togglePriceCalc && priceCalcBox) {
+        togglePriceCalc.addEventListener('click', () => {
+            const isHidden = priceCalcBox.style.display === 'none';
+            priceCalcBox.style.display = isHidden ? 'flex' : 'none';
+            togglePriceCalc.textContent = isHidden ? '−' : '+';
+        });
+    }
+
+    getPriceParts().forEach(input => {
+        input.addEventListener('input', calculatePriceFromParts);
+    });
 });
 
 modalButton.onclick = () => {
@@ -229,8 +242,6 @@ function addTask() {
         device: deviceInput.value,
         model: modelSecurity,
         SN: SNSecurity,
-        hasDevice: deviceBox.checked,
-        hasCharger: chargeryBox.checked,
         status: statusInput.value,
         price: Number(priceInput.value) || 0,
         pre: Number(preInput.value) || 0,
@@ -311,7 +322,7 @@ function renderTasks() {
         <div class="days-cell">${daysLeft} дн.</div>
         <div class="tdEdit">
             <button onclick="editTask(${task.id})">📝</button>
-            <button onclick="deleteTask(${task.id})">❌</button>
+            <button onclick="archiveTask(${task.id})">✅</button>
         </div>
         `;
 
@@ -325,12 +336,23 @@ function renderTasks() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     ...task,
-                    status: newStatus
+                    status: newStatus,
+                    company_id: user.company_id,
+                    user_id: user.id
                 })
             })
-            .then(res => res.json())
+            .then(async res => {
+                const data = await res.json();
+                if (!res.ok) {
+                    throw new Error(data.error || 'Ошибка обновления статуса');
+                }
+                return data;
+            })
             .then(() => loadTasks())
-            .catch(err => console.error('Ошибка обновления статуса:', err));
+            .catch(err => {
+                console.error('Ошибка обновления статуса:', err);
+                alert(err.message);
+            });
         });
 
         if (daysLeft < 0) tr.querySelector('.days-cell').style.color = "red"; /* выбор текущего сектора */
@@ -350,12 +372,15 @@ function editTask(id) {
     deviceInput.value = task.device || 'Смартфон';
     modelInput.value = returnHTML(task.model || '');
     SNInput.value = returnHTML(task.SN || '');
-    deviceBox.checked = Boolean(task.hasDevice);
-    chargeryBox.checked = Boolean(task.hasCharger);
     statusInput.value = task.status || 'Принят';
     priceInput.value = task.price ?? '';
     preInput.value = task.pre ?? '';
-    dateInput.value = task.acceptDate || '';
+    if (task.acceptDate) {
+        const d = new Date(task.acceptDate);
+        if (!isNaN(d)) {
+            dateInput.value = d.toISOString().split('T')[0];
+        }
+    };
     deadline.value = Number(task.deadline) || '';
     crushInput.value = returnHTML(task.crush || '');
     noteInput.value = returnHTML(task.note || '');
@@ -363,23 +388,6 @@ function editTask(id) {
     editIndex = id;
     modalButton.textContent = 'Сохранить';
     modal.style.display = 'flex';
-}
-
-/* удаление задачи */
-function deleteTask(id) {
-if (confirm("Удалить?")) {
-    fetch(`/orders/${id}`, {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            company_id: user.company_id
-        })
-    })
-    .then(() => {
-        loadTasks();
-    })
-    .catch(error => console.error('Ошибка при удалении:', error));
-}
 }
 
 /* очистка даты */
@@ -438,11 +446,9 @@ function clearForm() {
     phoneInput.value = '';
     customerInput.value = '';
     workerInput.value = '';
-    deviceInput.selectedIndex = 0;
+    deviceInput.value = '';
     modelInput.value = '';
     SNInput.value = '';
-    deviceBox.checked = false;
-    chargeryBox.checked = false;
     statusInput.value = (statuses.length ? statuses[0] : 'Принят');
     priceInput.value = '';
     preInput.value = '';
@@ -450,6 +456,8 @@ function clearForm() {
     dateInput.value = '';
     crushInput.value = '';
     noteInput.value = '';
+
+    clearPriceCalculator();
 
     editIndex = null;
     modalButton.textContent = 'Добавить';
@@ -514,8 +522,6 @@ function updateTask(id) {
         device: deviceInput.value,
         model: modelSecurity,
         SN: SNSecurity,
-        hasDevice: deviceBox.checked,
-        hasCharger: chargeryBox.checked,
         status: statusInput.value,
         price: Number(priceInput.value) || 0,
         pre: Number(preInput.value) || 0,
@@ -538,7 +544,11 @@ function updateTask(id) {
     .catch(error => console.error('Ошибка при обновлении:', error));
 }
 
-async function loadDevicesToSelect() {
+function normalizePhone(phone = '') {
+    return String(phone).replace(/\D/g, '');
+}
+
+async function loadDeviceHints(query = '') {
     try {
         const response = await fetch(`/api/devices/${user.company_id}`);
         const devices = await response.json();
@@ -547,18 +557,118 @@ async function loadDevicesToSelect() {
             throw new Error(devices.error || 'Ошибка загрузки устройств');
         }
 
-        const select = document.getElementById('deviceInput');
-        if (!select) return;
+        const list = document.getElementById('deviceHints');
+        if (!list) return;
 
-        select.innerHTML = '<option value="">Выберите устройство</option>';
+        list.innerHTML = '';
 
-        devices.forEach(device => {
-            const option = document.createElement('option');
-            option.value = device.name;
-            option.textContent = device.name;
-            select.appendChild(option);
-        });
+        devices
+            .filter(device => !query || device.name.toLowerCase().includes(query.toLowerCase()))
+            .forEach(device => {
+                const option = document.createElement('option');
+                option.value = device.name;
+                list.appendChild(option);
+            });
     } catch (error) {
         console.error('Ошибка загрузки устройств:', error);
     }
+}
+
+let contactHints = [];
+
+async function loadContactHints(query = '') {
+    try {
+        const response = await fetch(`/api/contacts/${user.company_id}?q=${encodeURIComponent(query)}`);
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || 'Ошибка загрузки контактов');
+        }
+
+        contactHints = Array.isArray(data) ? data : [];
+
+        const list = document.getElementById('contactHints');
+        if (!list) return;
+
+        list.innerHTML = '';
+
+        contactHints.forEach(contact => {
+            const option = document.createElement('option');
+            option.value = contact.phone;
+            option.label = `${contact.customer_name} — ${contact.phone}`;
+            list.appendChild(option);
+        });
+    } catch (error) {
+        console.error('Ошибка загрузки контактов:', error);
+    }
+}
+
+phoneInput.addEventListener('input', async () => {
+    await loadContactHints(phoneInput.value);
+
+    const normalized = phoneInput.value.replace(/\D/g, '');
+    const found = contactHints.find(c => c.phone_normalized === normalized);
+
+    if (found) {
+        customerInput.value = found.customer_name || '';
+    }
+});
+
+customerInput.addEventListener('input', async () => {
+    await loadContactHints(customerInput.value);
+
+    const found = contactHints.find(c =>
+        (c.customer_name || '').toLowerCase() === customerInput.value.trim().toLowerCase()
+    );
+
+    if (found && !phoneInput.value.trim()) {
+        phoneInput.value = found.phone || '';
+    }
+});
+
+function getPriceParts() {
+    return Array.from(document.querySelectorAll('.price-part'));
+}
+
+function calculatePriceFromParts() {
+    const total = getPriceParts().reduce((sum, input) => {
+        return sum + (Number(input.value) || 0);
+    }, 0);
+
+    priceInput.value = total ? total : '';
+}
+
+function clearPriceCalculator() {
+    getPriceParts().forEach(input => input.value = '');
+    if (priceCalcBox) {
+        priceCalcBox.style.display = 'none';
+    }
+    if (togglePriceCalc) {
+        togglePriceCalc.textContent = '+';
+    }
+}
+
+function archiveTask(id) {
+    if (!confirm('Отправить заказ в архив?')) return;
+
+    fetch(`/api/orders/${id}/archive`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            company_id: user.company_id,
+            user_id: user.id
+        })
+    })
+    .then(async res => {
+        const data = await res.json();
+        if (!res.ok) {
+            throw new Error(data.error || 'Ошибка архивации');
+        }
+        return data;
+    })
+    .then(() => loadTasks())
+    .catch(error => {
+        console.error('Ошибка архивации:', error);
+        alert(error.message);
+    });
 }

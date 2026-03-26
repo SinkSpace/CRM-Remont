@@ -17,15 +17,8 @@
         <div>
             <input id="search" placeholder="🔍">
             <select id="filter">
-            <option>Все статусы</option>
-            <option>Принят</option>
-            <option>В работе</option>
-            <option>Ждёт запчастей</option>
-            <option>На согласовании</option>
-            <option>Без ремонта</option>
-            <option>Сделан</option>
-            <option>Отменён</option>
-        </select>
+                <option>Все статусы</option>
+            </select>
         </div>
         <div id="nameShop">
             <span id="userName"></span>
@@ -62,12 +55,14 @@
             <div class="modal-row modal-row-3">
                 <section class="field">
                     <label for="phoneInput">Номер для связи</label>
-                    <input id="phoneInput" type="text">
+                    <input id="phoneInput" list="contactHints" type="tel">
+                    <datalist id="contactHints"></datalist>
                 </section>
 
                 <section class="field">
                     <label for="customerInput">Заказчик</label>
-                    <input id="customerInput" type="text">
+                    <input id="customerInput" list="customerHints" type="text">
+                    <datalist id="customerHints"></datalist>
                 </section>
 
                 <section class="field">
@@ -81,9 +76,8 @@
             <div class="modal-row modal-row-3">
                 <section class="field">
                     <label for="deviceInput">Устройство</label>
-                    <select id="deviceInput">
-                        <option value="">Выберите устройство</option>
-                    </select>
+                    <input id="deviceInput" list="deviceHints" type="text" placeholder="Например: Смартфон, Ноутбук, Планшет">
+                    <datalist id="deviceHints"></datalist>
                 </section>
 
                 <section class="field">
@@ -97,23 +91,22 @@
                 </section>
             </div>
 
-            <div class="modal-row modal-row-2 checks-row">
-                <label class="check-field">
-                    <input type="checkbox" id="deviceBox" style="width: auto; height: auto;">
-                    <span>Аппарат</span>
-                </label>
-
-                <label class="check-field">
-                    <input type="checkbox" id="chargeryBox" style="width: auto; height: auto;">
-                    <span>Зарядное устройство</span>
-                </label>
-            </div>
-
             <div class="modal-row modal-row-3">
                 <section class="field">
-                    <label for="priceInput">Стоимость ремонта</label>
+                <label for="priceInput">Стоимость ремонта</label>
+
+                <div class="price-main-row">
                     <input type="number" id="priceInput">
-                </section>
+                    <button type="button" id="togglePriceCalc" class="mini-button">+</button>
+                </div>
+
+                <div id="priceCalcBox" class="price-calc-box" style="display: none;">
+                    <input type="number" class="price-part" placeholder="Работа">
+                    <input type="number" class="price-part" placeholder="Запчасти">
+                    <input type="number" class="price-part" placeholder="Доп. услуги">
+                    <input type="number" class="price-part" placeholder="Прочее">
+                </div>
+            </section>
 
                 <section class="field">
                     <label for="preInput">Предоплата</label>
@@ -122,15 +115,7 @@
 
                 <section class="field">
                     <label for="statusInput">Статус</label>
-                    <select id="statusInput">
-                        <option>Принят</option>
-                        <option>В работе</option>
-                        <option>Ждёт запчастей</option>
-                        <option>На согласовании</option>
-                        <option>Без ремонта</option>
-                        <option>Сделан</option>
-                        <option>Отменён</option>
-                    </select>
+                    <select id="statusInput"></select>
                 </section>
             </div>
 
@@ -167,6 +152,7 @@
     <div id="modal-menu">
         <div id="menu-window">
             <a href="/"><button>Список заказов</button></a>
+            <a href="/archive"><button>Архив</button></a>
             <a href="/settings"><button>Настройки</button></a>
             <a href="/logs"><button>Логи</button></a>
             <a id="logoutButton"><button>Выход</button></a>

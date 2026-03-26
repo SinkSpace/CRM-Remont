@@ -173,41 +173,13 @@ app.get('/settings', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'settings.html'))
 })
 
-app.get('/orders', async (req, res) => {
-    try {
-        const { company_id } = req.query;
+app.get('/admin', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'admin.html'))
+})
 
-        if (!company_id) {
-            return res.status(400).json({ error: 'company_id required' });
-        }
-
-        const result = await pool.query(`
-            SELECT
-                id,
-                phone,
-                customer,
-                worker,
-                device,
-                model,
-                SN AS "SN",
-                hasDevice AS "hasDevice",
-                hasCharger AS "hasCharger",
-                status,
-                price,
-                pre,
-                acceptDate AS "acceptDate",
-                deadline,
-                crush,
-                note
-            FROM orders
-            WHERE company_id = $1
-        `, [company_id]);
-        res.json(result.rows);
-    } catch (error) {
-        console.error('Ошибка при получении заказов:', error);
-        res.status(500).json({ error: 'Ошибка сервера' });
-    }
-});
+app.get('/archive', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'archive.html'))
+})
 
 app.post('/orders', async (req, res) => {
     try {
@@ -218,8 +190,6 @@ app.post('/orders', async (req, res) => {
             device,
             model,
             SN,
-            hasDevice,
-            hasCharger,
             status,
             price,
             pre,
@@ -239,6 +209,9 @@ app.post('/orders', async (req, res) => {
             return res.status(400).json({ error: 'user_id required' });
         }
 
+        await upsertContact(company_id, customer, phone);
+        await upsertDevice(company_id, user_id, device);
+
         const result = await pool.query(
             `INSERT INTO orders
             (
@@ -248,8 +221,6 @@ app.post('/orders', async (req, res) => {
                 device,
                 model,
                 SN,
-                hasDevice,
-                hasCharger,
                 status,
                 price,
                 pre,
@@ -260,7 +231,7 @@ app.post('/orders', async (req, res) => {
                 user_id,
                 company_id
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
             RETURNING *`,
             [
                 phone,
@@ -269,8 +240,6 @@ app.post('/orders', async (req, res) => {
                 device,
                 model,
                 SN,
-                hasDevice,
-                hasCharger,
                 status,
                 price,
                 pre,
@@ -363,8 +332,6 @@ app.put('/orders/:id', async (req, res) => {
             device,
             model,
             SN,
-            hasDevice,
-            hasCharger,
             status,
             price,
             pre,
@@ -383,7 +350,7 @@ app.put('/orders/:id', async (req, res) => {
         const beforeResult = await pool.query(
             `SELECT
                 id, phone, customer, worker, device, model, SN,
-                hasDevice, hasCharger, status, price, pre,
+                status, price, pre,
                 acceptDate, deadline, crush, note
              FROM orders
              WHERE id = $1 AND company_id = $2`,
@@ -391,6 +358,9 @@ app.put('/orders/:id', async (req, res) => {
         );
 
         const before = beforeResult.rows[0];
+
+        await upsertContact(company_id, customer, phone);
+        await upsertDevice(company_id, user_id, device);
 
         const result = await pool.query(
             `UPDATE orders
@@ -400,16 +370,14 @@ app.put('/orders/:id', async (req, res) => {
                  device = $4,
                  model = $5,
                  SN = $6,
-                 hasDevice = $7,
-                 hasCharger = $8,
-                 status = $9,
-                 price = $10,
-                 pre = $11,
-                 acceptDate = $12,
-                 deadline = $13,
-                 crush = $14,
-                 note = $15
-             WHERE id = $16 AND company_id = $17
+                 status = $7,
+                 price = $8,
+                 pre = $9,
+                 acceptDate = $10,
+                 deadline = $11,
+                 crush = $12,
+                 note = $13
+             WHERE id = $14 AND company_id = $15
              RETURNING
                  id,
                  phone,
@@ -418,8 +386,6 @@ app.put('/orders/:id', async (req, res) => {
                  device,
                  model,
                  SN AS "SN",
-                 hasDevice AS "hasDevice",
-                 hasCharger AS "hasCharger",
                  status,
                  price,
                  pre,
@@ -434,8 +400,6 @@ app.put('/orders/:id', async (req, res) => {
                 device,
                 model,
                 SN,
-                hasDevice,
-                hasCharger,
                 status,
                 price,
                 pre,
@@ -829,6 +793,8 @@ app.get('/api/statuses/:companyId', async (req, res) => {
     try {
         const companyId = Number(req.params.companyId);
 
+        await ensureDefaultStatuses(companyId);
+
         const result = await pool.query(
             `SELECT id, user_id, company_id, name, created_at
              FROM statuses
@@ -973,8 +939,6 @@ app.get('/orders/:companyId', async (req, res) => {
                 device,
                 model,
                 SN AS "SN",
-                hasDevice AS "hasDevice",
-                hasCharger AS "hasCharger",
                 status,
                 price,
                 pre,
@@ -993,6 +957,302 @@ app.get('/orders/:companyId', async (req, res) => {
         res.status(500).json({ error: 'Ошибка сервера' });
     }
 });
+
+app.get('/api/contacts/:companyId', async (req, res) => {
+    try {
+        const companyId = Number(req.params.companyId);
+        const q = String(req.query.q || '').trim();
+
+        const result = await pool.query(
+            `SELECT id, customer_name, phone, phone_normalized, last_used_at
+             FROM contacts
+             WHERE company_id = $1
+               AND (
+                    $2 = ''
+                    OR customer_name ILIKE '%' || $2 || '%'
+                    OR phone ILIKE '%' || $2 || '%'
+                    OR phone_normalized ILIKE '%' || $2 || '%'
+               )
+             ORDER BY last_used_at DESC, id DESC
+             LIMIT 10`,
+            [companyId, q]
+        );
+
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Ошибка загрузки контактов:', error);
+        res.status(500).json({ error: 'Ошибка сервера' });
+    }
+});
+
+app.get('/api/archive/:companyId', async (req, res) => {
+    try {
+        const companyId = Number(req.params.companyId);
+
+        const result = await pool.query(`
+            SELECT
+                id,
+                phone,
+                customer,
+                worker,
+                device,
+                model,
+                SN AS "SN",
+                status,
+                price,
+                pre,
+                acceptDate AS "acceptDate",
+                deadline,
+                crush,
+                note,
+                is_archived,
+                archived_at
+                FROM orders
+                WHERE company_id = $1
+                AND is_archived = true
+                ORDER BY archived_at DESC NULLS LAST, id DESC
+                `, [companyId]);
+
+                res.json(result.rows);
+    } catch (error) {
+        console.error('Ошибка загрузки архива:', error);
+        res.status(500).json({error: 'Ошибка сервера'});
+    }
+});
+
+app.get('/orders', async (req, res) => {
+    try {
+        const { company_id } = req.query;
+
+        if (!company_id) {
+            return res.status(400).json({ error: 'company_id required' });
+        }
+
+        const result = await pool.query(`
+            SELECT
+                id,
+                phone,
+                customer,
+                worker,
+                device,
+                model,
+                SN AS "SN",
+                status,
+                price,
+                pre,
+                acceptDate AS "acceptDate",
+                deadline,
+                crush,
+                note,
+                is_archived,
+                archived_at
+            FROM orders
+            WHERE company_id = $1
+              AND is_archived = false
+            ORDER BY id DESC
+        `, [company_id]);
+
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Ошибка при получении заказов:', error);
+        res.status(500).json({ error: 'Ошибка сервера' });
+    }
+});
+
+app.put('/api/orders/:id/unarchive', async (req, res) => {
+    try {
+        const id = Number(req.params.id);
+        const { company_id, user_id } = req.body;
+
+        if (!company_id) {
+            return res.status(400).json({ error: 'company_id required' });
+        }
+
+        const beforeResult = await pool.query(
+            `SELECT id, customer, worker, model, status, price, is_archived
+             FROM orders
+             WHERE id = $1 AND company_id = $2`,
+            [id, company_id]
+        );
+
+        const before = beforeResult.rows[0];
+
+        if (!before) {
+            return res.status(404).json({ error: 'Заказ не найден' });
+        }
+
+        const result = await pool.query(
+            `UPDATE orders
+             SET is_archived = false,
+                 archived_at = NULL
+             WHERE id = $1 AND company_id = $2
+             RETURNING *`,
+            [id, company_id]
+        );
+
+        await writeLog({
+            company_id,
+            user_id: user_id || null,
+            entity_type: 'order',
+            entity_id: id,
+            action: 'unarchive',
+            title: `Заказ №${id} восстановлен из архива`,
+            details: {
+                before,
+                after: result.rows[0]
+            }
+        });
+
+        res.json(result.rows[0]);
+    } catch (error) {
+        console.error('Ошибка восстановления заказа:', error);
+        res.status(500).json({ error: 'Ошибка сервера' });
+    }
+});
+
+app.put('/api/orders/:id/archive', async (req, res) => {
+    try {
+        const id = Number(req.params.id);
+        const { company_id, user_id } = req.body;
+
+        if (!company_id) {
+            return res.status(400).json({ error: 'company_id required' });
+        }
+
+        const beforeResult = await pool.query(
+            `SELECT id, customer, worker, model, status, price, is_archived
+             FROM orders
+             WHERE id = $1 AND company_id = $2`,
+            [id, company_id]
+        );
+
+        const before = beforeResult.rows[0];
+
+        if (!before) {
+            return res.status(404).json({ error: 'Заказ не найден' });
+        }
+
+        const result = await pool.query(
+            `UPDATE orders
+             SET is_archived = true,
+                 archived_at = NOW()
+             WHERE id = $1 AND company_id = $2
+             RETURNING *`,
+            [id, company_id]
+        );
+
+        await writeLog({
+            company_id,
+            user_id: user_id || null,
+            entity_type: 'order',
+            entity_id: id,
+            action: 'archive',
+            title: `Заказ №${id} отправлен в архив`,
+            details: {
+                before,
+                after: result.rows[0]
+            }
+        });
+
+        res.json(result.rows[0]);
+    } catch (error) {
+        console.error('Ошибка архивации заказа:', error);
+        res.status(500).json({ error: 'Ошибка сервера' });
+    }
+});
+
+async function upsertContact(company_id, customer_name, phone) {
+    const phone_normalized = normalizePhone(phone);
+
+    if (!customer_name || !phone_normalized) return null;
+
+    const existing = await pool.query(
+        `SELECT id
+         FROM contacts
+         WHERE company_id = $1 AND phone_normalized = $2`,
+        [company_id, phone_normalized]
+    );
+
+    if (existing.rows[0]) {
+        const result = await pool.query(
+            `UPDATE contacts
+             SET customer_name = $1,
+                 phone = $2,
+                 updated_at = NOW(),
+                 last_used_at = NOW()
+             WHERE id = $3
+             RETURNING *`,
+            [customer_name, phone, existing.rows[0].id]
+        );
+        return result.rows[0];
+    }
+
+    const result = await pool.query(
+        `INSERT INTO contacts (company_id, customer_name, phone, phone_normalized)
+         VALUES ($1, $2, $3, $4)
+         RETURNING *`,
+        [company_id, customer_name, phone, phone_normalized]
+    );
+
+    return result.rows[0];
+}
+
+function normalizePhone(phone = '') {
+    return String(phone).replace(/\D/g, '');
+}
+
+async function upsertDevice(company_id, user_id, name) {
+    const trimmed = String(name || '').trim();
+    if (!trimmed) return null;
+
+    const existing = await pool.query(
+        `SELECT id, name
+         FROM devices
+         WHERE company_id = $1
+           AND LOWER(name) = LOWER($2)
+         LIMIT 1`,
+        [company_id, trimmed]
+    );
+
+    if (existing.rows[0]) return existing.rows[0];
+
+    const result = await pool.query(
+        `INSERT INTO devices (company_id, user_id, name)
+         VALUES ($1, $2, $3)
+         RETURNING *`,
+        [company_id, user_id || null, trimmed]
+    );
+
+    return result.rows[0];
+}
+
+const DEFAULT_STATUSES = [
+    'Принят',
+    'В работе',
+    'Ждёт запчастей',
+    'На согласовании',
+    'Без ремонта',
+    'Сделан',
+    'Отменён'
+];
+
+async function ensureDefaultStatuses(company_id, user_id = null) {
+    const existing = await pool.query(
+        `SELECT id FROM statuses WHERE company_id = $1 LIMIT 1`,
+        [company_id]
+    );
+
+    if (existing.rows.length > 0) return;
+
+    for (const name of DEFAULT_STATUSES) {
+        await pool.query(
+            `INSERT INTO statuses (user_id, company_id, name)
+             VALUES ($1, $2, $3)
+             ON CONFLICT DO NOTHING`,
+            [user_id, company_id, name]
+        );
+    }
+}
 
 app.listen(3000, () => {
     console.log('3000');

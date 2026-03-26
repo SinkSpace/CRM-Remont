@@ -278,7 +278,6 @@ select {
 
 .status-card,
 .device-card,
-.worker-card,
 .log-card {
     max-width: 900px;
 }
