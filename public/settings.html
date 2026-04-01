@@ -6,6 +6,7 @@
     <link rel="stylesheet" href="css/settings.css">
     <link rel="stylesheet" href="css/uni.css">
     <link rel="stylesheet" href="css/mobile.css">
+    <link rel="stylesheet" href="css/dark.css">
     <title>CRM</title>
 </head>
 <body>
@@ -29,6 +30,7 @@
             <p><button class="settings-tab active" data-tab="company">Компания</button></p>
             <p><button class="settings-tab" data-tab="workers">Сотрудники</button></p>
             <p><button class="settings-tab" data-tab="devices">Устройства</button></p>
+            <p><button class="settings-tab" data-tab="documents">Документы</button></p>
             <p><button class="settings-tab" data-tab="statuses">Статусы</button></p>
         </div>
 
@@ -71,6 +73,40 @@
                 <div id="devicesList"></div>
             </section>
 
+            <section class="settings-panel" id="tab-documents">
+                <h3>Документы</h3>
+                <div id="filler">
+                    <section>
+                        <div class="device-form">
+                            <input id="templateNameInput" placeholder="Название шаблона, например: Договор">
+                            <input id="templateFileInput" type="file" accept=".docx">
+                            <button id="uploadTemplateButton">Загрузить</button>
+                        </div>
+
+                        <div id="templatesList"></div>
+                    </section>
+                    <div><p>Создайте Word-документ, используя следующие теги:</p>
+                        <p>${НазваниеКомпании}</p>
+                        <p>${ГородРасположенияКомпании}</p>
+                        <p>${АдресКомпании}</p>
+                        <p>${ТелефонКомпании}</p>
+                        <p>${НомерДокумента}</p>
+                        <p>${ДатаВыдачи}</p>
+                        <p>${ФиоЗаказчика}</p>
+                        <p>${ЮрНаименованиеКомпании}</p>
+                        <p>${Устройство}</p>
+                        <p>${МодельУстройства}</p>
+                        <p>${СерийныйНомерУстройства}</p>
+                        <p>${ОписаниеНеисправности}</p>
+                        <p>${ВыполненнаяРабота}</p>
+                        <p>${ФиоИсполнителя}</p>
+                        <p>${ИтоговаяСтоимость}</p>
+                        <p>${#ГарантийныеОбязательства}</p>
+                        <p>${/ГарантийныеОбязательства}</p>
+                    </div>
+                </div>
+            </section>
+
             <section class="settings-panel" id="tab-statuses">
                 <h3>Статусы</h3>
 
@@ -95,4 +131,5 @@
 </body>
 <script src="js/menu.js"></script>
 <script src="js/settings.js"></script>
+<script src="js/theme.js"></script>
 </html>

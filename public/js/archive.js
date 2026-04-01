@@ -135,17 +135,17 @@ function escapeHtml(value) {
 
 /* удаление задачи */
 function deleteTask(id) {
-if (confirm("Удалить?")) {
-    fetch(`/orders/${id}`, {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            company_id: user.company_id
+    if (confirm("Удалить?")) {
+        fetch(`/orders/${id}`, {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                company_id: user.company_id
+            })
         })
-    })
-    .then(() => {
-        loadTasks();
-    })
-    .catch(error => console.error('Ошибка при удалении:', error));
-}
+        .then(() => {
+            loadArchiveTasks();
+        })
+        .catch(error => console.error('Ошибка при удалении:', error));
+    }
 }

@@ -322,6 +322,7 @@ function renderTasks() {
         <div class="days-cell">${daysLeft} дн.</div>
         <div class="tdEdit">
             <button onclick="editTask(${task.id})">📝</button>
+            <button onclick="generateDocument(${task.id})">📄</button>
             <button onclick="archiveTask(${task.id})">✅</button>
         </div>
         `;
@@ -625,6 +626,53 @@ customerInput.addEventListener('input', async () => {
         phoneInput.value = found.phone || '';
     }
 });
+
+async function generateDocument(orderId) {
+    try {
+        const responseTemplates = await fetch(`/api/templates/${user.company_id}`);
+        const templates = await responseTemplates.json();
+
+        if (!responseTemplates.ok) {
+            throw new Error(templates.error || 'Ошибка загрузки шаблонов');
+        }
+
+        if (!templates.length) {
+            alert('Сначала загрузи шаблон в настройках');
+            return;
+        }
+
+        const templateId = templates[0].id;
+
+        const response = await fetch('/api/documents/generate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                company_id: user.company_id,
+                user_id: user.id,
+                order_id: orderId,
+                template_id: templateId
+            })
+        });
+
+        if (!response.ok) {
+            const data = await response.json();
+            throw new Error(data.error || 'Ошибка генерации документа');
+        }
+
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `document-order-${orderId}.docx`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
+    } catch (error) {
+        console.error('Ошибка генерации документа:', error);
+        alert(error.message);
+    }
+}
 
 function getPriceParts() {
     return Array.from(document.querySelectorAll('.price-part'));

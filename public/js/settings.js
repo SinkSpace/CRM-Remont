@@ -33,6 +33,8 @@ document.addEventListener('DOMContentLoaded', () => {
     bindDeviceCreate();
     loadStatuses();
     bindStatusCreate();
+    loadTemplates();
+    bindTemplateUpload();
 });
 
 async function loadDevices() {
@@ -298,6 +300,111 @@ function bindWorkerCreate() {
     if (!addWorkerButton) return;
 
     addWorkerButton.addEventListener('click', createWorker);
+}
+
+async function loadTemplates() {
+    try {
+        const response = await fetch(`/api/templates/${user.company_id}`);
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || 'Ошибка загрузки шаблонов');
+        }
+
+        renderTemplates(Array.isArray(data) ? data : []);
+    } catch (error) {
+        console.error('Ошибка загрузки шаблонов:', error);
+        alert(error.message);
+    }
+}
+
+function renderTemplates(templates) {
+    const container = document.getElementById('templatesList');
+    if (!container) return;
+
+    container.innerHTML = '';
+
+    if (!templates.length) {
+        container.innerHTML = '<p>Шаблонов пока нет</p>';
+        return;
+    }
+
+    templates.forEach(template => {
+        const card = document.createElement('div');
+        card.className = 'device-card';
+        card.innerHTML = `
+            <span class="device-name">${escapeHtml(template.name)} (${escapeHtml(template.original_name)})</span>
+            <button class="delete-device-button">Удалить</button>
+        `;
+
+        card.querySelector('button').addEventListener('click', () => deleteTemplate(template.id));
+        container.appendChild(card);
+    });
+}
+
+function bindTemplateUpload() {
+    const button = document.getElementById('uploadTemplateButton');
+    if (!button) return;
+
+    button.addEventListener('click', uploadTemplate);
+}
+
+async function uploadTemplate() {
+    try {
+        const name = document.getElementById('templateNameInput').value.trim();
+        const fileInput = document.getElementById('templateFileInput');
+        const file = fileInput.files[0];
+
+        if (!name || !file) {
+            alert('Укажи название и выбери docx-файл');
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('name', name);
+        formData.append('company_id', user.company_id);
+        formData.append('user_id', user.id);
+        formData.append('template', file);
+
+        const response = await fetch('/api/templates/upload', {
+            method: 'POST',
+            body: formData
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || 'Ошибка загрузки шаблона');
+        }
+
+        document.getElementById('templateNameInput').value = '';
+        fileInput.value = '';
+        await loadTemplates();
+    } catch (error) {
+        console.error('Ошибка загрузки шаблона:', error);
+        alert(error.message);
+    }
+}
+
+async function deleteTemplate(id) {
+    try {
+        const response = await fetch(`/api/templates/${id}`, {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ company_id: user.company_id })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || 'Ошибка удаления шаблона');
+        }
+
+        await loadTemplates();
+    } catch (error) {
+        console.error('Ошибка удаления шаблона:', error);
+        alert(error.message);
+    }
 }
 
 async function createWorker() {

@@ -4,10 +4,40 @@ const path = require('path');
 const pool = require('./db'); /* подключение БД */
 const app = express(); /* создание веб-приложения */
 const bcrypt = require('bcrypt');
+const fs = require('fs');
+const multer = require('multer');
+const PizZip = require('pizzip');
+const Docxtemplater = require('docxtemplater');
+const bwipjs = require('bwip-js');
+
+const templatesDir = path.join(__dirname, 'uploads', 'templates');
+const generatedDir = path.join(__dirname, 'uploads', 'generated');
+
+fs.mkdirSync(templatesDir, { recursive: true });
+fs.mkdirSync(generatedDir, { recursive: true });
 
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(cors());
 app.use(express.json());
+
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => cb(null, templatesDir),
+    filename: (req, file, cb) => {
+        const ext = path.extname(file.originalname);
+        cb(null, `${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`);
+    }
+});
+
+const uploadTemplate = multer({
+    storage,
+    limits: { fileSize: 10 * 1024 * 1024 },
+    fileFilter: (req, file, cb) => {
+        if (path.extname(file.originalname).toLowerCase() !== '.docx') {
+            return cb(new Error('Можно загружать только .docx'));
+        }
+        cb(null, true);
+    }
+});
 
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
@@ -1252,6 +1282,272 @@ async function ensureDefaultStatuses(company_id, user_id = null) {
             [user_id, company_id, name]
         );
     }
+}
+
+app.post('/api/templates/upload', uploadTemplate.single('template'), async (req, res) => {
+    try {
+        const { company_id, user_id, name } = req.body;
+        const originalName = Buffer.from(req.file.originalname, 'latin1').toString('utf8');
+
+        if (!company_id || !name || !req.file) {
+            return res.status(400).json({ error: 'company_id, name и template обязательны' });
+        }
+
+        const result = await pool.query(
+            `INSERT INTO document_templates (company_id, user_id, name, file_path, original_name)
+             VALUES ($1, $2, $3, $4, $5)
+             RETURNING *`,
+            [company_id, user_id || null, name.trim(), req.file.path, originalName]
+        );
+
+        res.status(201).json(result.rows[0]);
+    } catch (error) {
+        console.error('Ошибка загрузки шаблона:', error);
+        res.status(500).json({ error: 'Ошибка сервера' });
+    }
+});
+
+app.get('/api/barcode/:text', async (req, res) => {
+    try {
+        const png = await bwipjs.toBuffer({
+            bcid: 'code128',
+            text: String(req.params.text),
+            scale: 3,
+            height: 12,
+            includetext: false
+        });
+
+        res.type('png');
+        res.send(png);
+    } catch (error) {
+        console.error('Ошибка генерации штрихкода:', error);
+        res.status(500).json({ error: 'Не удалось сгенерировать штрихкод' });
+    }
+});
+
+app.get('/api/templates/:companyId', async (req, res) => {
+    try {
+        const companyId = Number(req.params.companyId);
+
+        const result = await pool.query(
+            `SELECT id, company_id, user_id, name, original_name, created_at
+             FROM document_templates
+             WHERE company_id = $1
+             ORDER BY id DESC`,
+            [companyId]
+        );
+
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Ошибка загрузки шаблонов:', error);
+        res.status(500).json({ error: 'Ошибка сервера' });
+    }
+});
+
+app.delete('/api/templates/:id', async (req, res) => {
+    try {
+        const id = Number(req.params.id);
+        const { company_id } = req.body;
+
+        const result = await pool.query(
+            `DELETE FROM document_templates
+             WHERE id = $1 AND company_id = $2
+             RETURNING *`,
+            [id, company_id]
+        );
+
+        if (!result.rows[0]) {
+            return res.status(404).json({ error: 'Шаблон не найден' });
+        }
+
+        const filePath = result.rows[0].file_path;
+        if (filePath && fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath);
+        }
+
+        res.json({ message: 'Шаблон удалён' });
+    } catch (error) {
+        console.error('Ошибка удаления шаблона:', error);
+        res.status(500).json({ error: 'Ошибка сервера' });
+    }
+});
+
+app.post('/api/documents/generate', async (req, res) => {
+    try {
+        const { company_id, order_id, template_id, user_id } = req.body;
+
+        if (!company_id || !order_id || !template_id) {
+            return res.status(400).json({ error: 'company_id, order_id, template_id обязательны' });
+        }
+
+        const templateResult = await pool.query(
+            `SELECT *
+             FROM document_templates
+             WHERE id = $1 AND company_id = $2`,
+            [template_id, company_id]
+        );
+
+        const template = templateResult.rows[0];
+        if (!template) {
+            return res.status(404).json({ error: 'Шаблон не найден' });
+        }
+
+        const data = await buildTemplateData(company_id, order_id);
+
+        const content = fs.readFileSync(template.file_path, 'binary');
+        const zip = new PizZip(content);
+
+        const doc = new Docxtemplater(zip, {
+            paragraphLoop: true,
+            linebreaks: true,
+            delimiters: {
+                start: '${',
+                end: '}'
+            }
+        });
+
+        doc.render(data);
+
+        const buffer = doc.getZip().generate({
+            type: 'nodebuffer',
+            compression: 'DEFLATE'
+        });
+
+        const outputPath = path.join(
+            generatedDir,
+            `document-${company_id}-${order_id}-${template_id}-${Date.now()}.docx`
+        );
+
+        fs.writeFileSync(outputPath, buffer);
+
+        await pool.query(
+            `INSERT INTO generated_documents (company_id, order_id, template_id, created_by, file_path)
+             VALUES ($1, $2, $3, $4, $5)`,
+            [company_id, order_id, template_id, user_id || null, outputPath]
+        );
+
+        res.download(outputPath);
+    } catch (error) {
+        console.error('Ошибка генерации документа:', error);
+        res.status(500).json({
+            error: 'Ошибка генерации документа',
+            details: error.message
+        });
+    }
+});
+
+function formatDate(value) {
+    if (!value) return '';
+    const d = new Date(value);
+    if (isNaN(d)) return '';
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    return `${day}.${month}.${year}`;
+}
+
+function formatMoney(value) {
+    const num = Number(value);
+    return Number.isFinite(num) ? String(num) : '0';
+}
+
+function normalizePhone(phone = '') {
+    return String(phone).replace(/\D/g, '');
+}
+
+function addDays(dateValue, days) {
+    const d = new Date(dateValue);
+    if (isNaN(d)) return null;
+    d.setDate(d.getDate() + days);
+    return d;
+}
+
+async function generateBarcodeBase64(text) {
+    const png = await bwipjs.toBuffer({
+        bcid: 'code128',
+        text: String(text),
+        scale: 3,
+        height: 12,
+        includetext: false
+    });
+
+    return png.toString('base64');
+}
+
+async function buildTemplateData(company_id, order_id) {
+    const orderResult = await pool.query(
+        `SELECT *
+         FROM orders
+         WHERE id = $1 AND company_id = $2`,
+        [order_id, company_id]
+    );
+
+    const order = orderResult.rows[0];
+    if (!order) {
+        throw new Error('Заказ не найден');
+    }
+
+    const profileResult = await pool.query(
+        `SELECT display_name, shop_name, city, address, phone
+         FROM user_profiles
+         WHERE company_id = $1
+         ORDER BY id ASC
+         LIMIT 1`,
+        [company_id]
+    );
+
+    const profile = profileResult.rows[0] || {};
+
+    const warrantyDays = 30;
+    const warrantyEnd = order.acceptdate ? addDays(order.acceptdate, warrantyDays) : null;
+
+    return {
+        ШтрихкодДокумента: String(order.id),
+        НазваниеКомпании: profile.display_name || '',
+        ЮрНаименованиеКомпании: profile.shop_name || profile.display_name || '',
+        ГородРасположенияКомпании: profile.city || '',
+        АдресКомпании: profile.address || '',
+        РежимРаботы: '',
+        ТелефонКомпании: profile.phone || '',
+
+        НомерДокумента: order.id,
+        ДатаДокумента: formatDate(order.acceptdate || order.acceptDate),
+        ДатаВыдачи: formatDate(order.acceptdate || order.acceptDate),
+
+        ФиоЗаказчика: order.customer || '',
+        КонтактыЗаказчика: order.phone || '',
+        Устройство: order.device || '',
+        МодельУстройства: order.model || '',
+        СерийныйНомерУстройства: order.sn || order.SN || '',
+        ОписаниеНеисправности: order.crush || '',
+        ВыполненнаяРабота: order.note || '',
+        ФиоИсполнителя: order.worker || '',
+
+        ИтоговаяСтоимость: formatMoney(order.price),
+        ПримернаяСтоимостьРемонта: formatMoney(order.price),
+        Предоплата: formatMoney(order.pre),
+        СрокРемонта: `${order.deadline || 0} дней`,
+        ДатаОкончанияРемонта: formatDate(addDays(new Date(), Number(order.deadline) || 0)),
+        ДатаОкончанияГарантии: formatDate(warrantyEnd),
+        СрокГарантии: `${warrantyDays} дней`,
+        ГарантийныеОбязательства: true,
+
+        КомплектацияУстройства: '',
+        Примечание: order.note || ''
+    };
+}
+
+function formatMoney(value) {
+    const num = Number(value);
+    if (!num) return '0';
+    return String(num);
+}
+
+function addDays(dateValue, days) {
+    const d = new Date(dateValue);
+    if (isNaN(d)) return '';
+    d.setDate(d.getDate() + days);
+    return d;
 }
 
 app.listen(3000, () => {

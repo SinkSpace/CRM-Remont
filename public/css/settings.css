@@ -312,6 +312,11 @@ select {
     max-width: 900px;
 }
 
+#filler {
+    display: flex;
+    gap: 2vw;
+}
+
 @media (max-width: 1100px) {
     .admin-grid,
     .company-grid {
