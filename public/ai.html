@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="css/ai.css">
+    <link rel="stylesheet" href="css/uni.css">
+    <link rel="stylesheet" href="css/mobile.css">
+    <link rel="stylesheet" href="css/dark.css">
+    <title>CRM</title>
+</head>
+<body>
+    <nav class="parent">
+        <div class="parent" id="headName">
+            <img alt="Меню" src="menu.svg" id="menu">
+            <h1>CRM</h1>
+        </div>
+        <div style="visibility: hidden;">
+            <input id="search" placeholder="🔍" data-theme="dark">
+            <select id="filter" data-theme="dark">
+                <option>Все статусы</option>
+            </select>
+        </div>
+        <div id="nameShop">
+            <span id="userName"></span>
+            <span id="userEmail"></span>
+        </div>
+    </nav>
+      <h1>⚡ GigaChat Terminal</h1>
+
+        <textarea id="msg" placeholder="Напиши запрос..."></textarea>
+        <button onclick="send()">Отправить</button>
+
+        <div class="box" id="out"></div>
+
+    <div id="modal-menu">
+        <div id="menu-window">
+            <a href="/"><button>Список заказов</button></a>
+            <a href="/archive"><button>Архив</button></a>
+            <a href="/settings"><button>Настройки</button></a>
+            <a href="/logs"><button>Логи</button></a>
+            <a id="logoutButton"><button>Выход</button></a>
+        </div>
+    </div>
+</body>
+<!--<script src="js/index/list.js"></script>
+<script src="js/index/addOrder.js"></script>
+<script src="js/index/deadline.js"></script> -->
+<script src="js/menu.js"></script>
+<script src="js/theme.js"></script>
+<script src="js/ai.js"></script>
+</html>

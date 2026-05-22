@@ -3,11 +3,11 @@
     color: white;
 }
 
-[data-theme="dark"] #mainHead div:active, #mainHead div:hover {
+[data-theme="dark"] #mainHead div:active, [data-theme="dark"] #mainHead div:hover {
     color: #2C97F2;
 }
 
-[data-theme="dark"] select, option {
+[data-theme="dark"] select, [data-theme="dark"] option {
     background-color: #333333;
     color: white;
     border: 0px;
@@ -26,6 +26,7 @@
 
 [data-theme="dark"] #modal-window input {
     background-color: #575656;
+    color: white;
 }
 
 /* настройки */
@@ -39,11 +40,11 @@
     background-color: #2C97F2;
 }
 
-[data-theme="dark"] .worker-card, .status-card, .device-card {
+[data-theme="dark"] .worker-card, [data-theme="dark"] .status-card, [data-theme="dark"] .device-card {
     background-color: #8e8a8a;
 }
 
-[data-theme="dark"] #modal-window select {
+[data-theme="dark"] #modal-window select, [data-theme="dark"] #modal-window input {
     background-color: #575656;
 }
 
@@ -63,7 +64,7 @@
 
 /* авторизация */
 
-[data-theme="dark"] input[id="password"], input[id="email"], input[id="nameCRM"], input[id="repeatPassword"] {
+[data-theme="dark"] input[id="password"], [data-theme="dark"] input[id="email"], [data-theme="dark"] input[id="nameCRM"], [data-theme="dark"] input[id="repeatPassword"] {
     background-color: #555555;
 }
 

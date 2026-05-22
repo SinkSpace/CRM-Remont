@@ -1,3 +1,4 @@
+/******** ПОДКЛЮЧЕНИЕ *********/
 const express = require('express'); /* подключение express */
 const cors = require('cors'); /* подключение cors */
 const path = require('path');
@@ -9,17 +10,12 @@ const multer = require('multer');
 const PizZip = require('pizzip');
 const Docxtemplater = require('docxtemplater');
 const bwipjs = require('bwip-js');
+const dotenv = require('dotenv');
 
 const templatesDir = path.join(__dirname, 'uploads', 'templates');
 const generatedDir = path.join(__dirname, 'uploads', 'generated');
 
-fs.mkdirSync(templatesDir, { recursive: true });
-fs.mkdirSync(generatedDir, { recursive: true });
-
-app.use(express.static(path.join(__dirname, 'public')));
-app.use(cors());
-app.use(express.json());
-
+/******** НАСТРОЙКИ *********/
 const storage = multer.diskStorage({
     destination: (req, file, cb) => cb(null, templatesDir),
     filename: (req, file, cb) => {
@@ -39,181 +35,64 @@ const uploadTemplate = multer({
     }
 });
 
-app.get('/', (req, res) => {
+const DEFAULT_STATUSES = [
+    'Принят',
+    'В работе',
+    'Ждёт запчастей',
+    'На согласовании',
+    'Без ремонта',
+    'Сделан',
+    'Отменён'
+];
+
+/******** СОЗДАНИЕ ПАПОК *********/
+fs.mkdirSync(templatesDir, { recursive: true });
+fs.mkdirSync(generatedDir, { recursive: true });
+
+/******** MIDDLEWARE *********/
+app.use(express.static(path.join(__dirname, 'public')));
+app.use(cors());
+app.use(express.json());
+
+/******** СТРАНИЦЫ *********/
+app.get('/', (req, res) => { //Главная страница
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-app.post('/api/register', async (req, res) => {
-    const client = await pool.connect();
-
-    try {
-        await client.query('BEGIN');
-
-        const { email, password, display_name, shop_name, phone } = req.body;
-
-        if (!email || !password || !display_name) {
-            await client.query('ROLLBACK');
-            return res.status(400).json({ error: 'email, password и display_name обязательны' });
-        }
-
-        const existingUser = await client.query(
-            'SELECT id FROM users WHERE email = $1',
-            [email]
-        );
-
-        if (existingUser.rows.length > 0) {
-            await client.query('ROLLBACK');
-            return res.status(409).json({ error: 'Пользователь с таким email уже существует' });
-        }
-
-        const companyResult = await client.query(
-            `INSERT INTO companies (name)
-             VALUES ($1)
-             RETURNING id, name`,
-            [shop_name || display_name]
-        );
-
-        const company = companyResult.rows[0];
-        const passwordHash = await bcrypt.hash(password, 10);
-
-        const userResult = await client.query(
-            `INSERT INTO users (email, password_hash, role, company_id)
-             VALUES ($1, $2, $3, $4)
-             RETURNING id, email, role, company_id`,
-            [email, passwordHash, 'master', company.id]
-        );
-
-        const user = userResult.rows[0];
-
-        await client.query(
-            `INSERT INTO user_profiles (user_id, company_id, display_name, shop_name, phone)
-             VALUES ($1, $2, $3, $4, $5)`,
-            [user.id, company.id, display_name, shop_name || null, phone || null]
-        );
-
-        await client.query(
-            `UPDATE companies
-             SET owner_user_id = $1
-             WHERE id = $2`,
-            [user.id, company.id]
-        );
-
-        await client.query('COMMIT');
-
-        res.status(201).json({
-            message: 'Пользователь зарегистрирован',
-            user: {
-                id: user.id,
-                email: user.email,
-                role: user.role,
-                company_id: user.company_id
-            }
-        });
-    } catch (error) {
-        await client.query('ROLLBACK');
-        console.error('Ошибка регистрации:', error);
-        res.status(500).json({ error: 'Ошибка сервера' });
-    } finally {
-        client.release();
-    }
-});
-
-app.post('/api/login', async (req, res) => {
-    try {
-        const { email, password } = req.body;
-
-        if (!email || !password) {
-            return res.status(400).json({
-                error: 'email и password обязательны'
-            });
-        }
-
-        const result = await pool.query(
-            `SELECT
-                u.id,
-                u.email,
-                u.password_hash,
-                u.role,
-                u.is_active,
-                u.company_id,
-                p.display_name,
-                p.shop_name,
-                p.phone,
-                p.avatar_url
-            FROM users u
-            LEFT JOIN user_profiles p ON p.user_id = u.id
-            WHERE u.email = $1`,
-            [email]
-        );
-
-        const user = result.rows[0];
-
-        if (!user) {
-            return res.status(401).json({
-                error: 'Неверный email или пароль'
-            });
-        }
-
-        if (!user.is_active) {
-            return res.status(403).json({
-                error: 'Пользователь отключён'
-            });
-        }
-
-        const isMatch = await bcrypt.compare(password, user.password_hash);
-
-        if (!isMatch) {
-            return res.status(401).json({
-                error: 'Неверный email или пароль'
-            });
-        }
-
-        res.json({
-            message: 'Вход выполнен',
-            user: {
-                id: user.id,
-                email: user.email,
-                role: user.role,
-                company_id: user.company_id,
-                display_name: user.display_name,
-                shop_name: user.shop_name,
-                phone: user.phone,
-                avatar_url: user.avatar_url
-            }
-        });
-    } catch (error) {
-        console.error('Ошибка входа:', error);
-        res.status(500).json({ error: 'Ошибка сервера' });
-    }
-});
-
-app.get('/register', (req, res) => {
+app.get('/register', (req, res) => { //Регистрация
     res.sendFile(path.join(__dirname, 'public', 'register.html'));
 })
 
-app.get('/join', (req, res) => {
+app.get('/join', (req, res) => { //Вход
     res.sendFile(path.join(__dirname, 'public', 'join.html'));
 })
 
-app.get('/logs', (req, res) => {
+app.get('/logs', (req, res) => { //Логи
     res.sendFile(path.join(__dirname, 'public', 'logs.html'));
 })
 
-app.get('/settings', (req, res) => {
+app.get('/settings', (req, res) => { //Настройки
     res.sendFile(path.join(__dirname, 'public', 'settings.html'))
 })
 
-app.get('/admin', (req, res) => {
+app.get('/admin', (req, res) => { //Админ-панель
     res.sendFile(path.join(__dirname, 'public', 'admin.html'))
 })
 
-app.get('/archive', (req, res) => {
+app.get('/archive', (req, res) => { //Архив
     res.sendFile(path.join(__dirname, 'public', 'archive.html'))
 })
 
+app.get('/ai', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'ai.html'))
+})
+
+/******** ЗАКАЗЫ *********/
+
+/* 1. Создание заказа */
 app.post('/orders', async (req, res) => {
     try {
-        const {
+        const { //характеристики заказа
             phone,
             customer,
             worker,
@@ -232,11 +111,11 @@ app.post('/orders', async (req, res) => {
         } = req.body;
 
         if (!company_id) {
-            return res.status(400).json({ error: 'company_id required' });
+            return res.status(400).json({ error: 'company_id required' }); //если компании не (прямой переход)
         }
 
         if (!user_id) {
-            return res.status(400).json({ error: 'user_id required' });
+            return res.status(400).json({ error: 'user_id required' }); //если пользователь не авторизован
         }
 
         await upsertContact(company_id, customer, phone);
@@ -307,50 +186,79 @@ app.post('/orders', async (req, res) => {
     }
 });
 
-app.delete('/orders/:id', async (req, res) => {
+/* 1.1 Получение заказов */
+app.get('/orders', async (req, res) => {
     try {
-        const id = Number(req.params.id);
-        const company_id = Number(req.query.company_id || req.body.company_id);
+        const { company_id } = req.query;
 
         if (!company_id) {
             return res.status(400).json({ error: 'company_id required' });
         }
 
-        const beforeResult = await pool.query(
-            `SELECT id, customer, worker, model, status, price
-             FROM orders
-             WHERE id = $1 AND company_id = $2`,
-            [id, company_id]
-        );
+        const result = await pool.query(`
+            SELECT
+                id,
+                phone,
+                customer,
+                worker,
+                device,
+                model,
+                SN AS "SN",
+                status,
+                price,
+                pre,
+                acceptDate AS "acceptDate",
+                deadline,
+                crush,
+                note,
+                is_archived,
+                archived_at
+            FROM orders
+            WHERE company_id = $1
+              AND is_archived = false
+            ORDER BY id DESC
+        `, [company_id]);
 
-        const before = beforeResult.rows[0];
-
-        if (!before) {
-            return res.status(404).json({ error: 'Заказ не найден' });
-        }
-
-        await pool.query(
-            'DELETE FROM orders WHERE id = $1 AND company_id = $2',
-            [id, company_id]
-        );
-
-        await writeLog({
-            company_id,
-            user_id: null,
-            entity_type: 'order',
-            entity_id: id,
-            action: 'delete',
-            title: `Удалён заказ №${id}`,
-            details: before
-        });
-
-        res.json({ message: 'Заказ удалён' });
+        res.json(result.rows);
     } catch (error) {
-        console.error('Ошибка при удалении заказа:', error);
+        console.error('Ошибка при получении заказов:', error);
         res.status(500).json({ error: 'Ошибка сервера' });
     }
 });
 
+app.get('/orders/:companyId', async (req, res) => {
+    try {
+        const companyId = Number(req.params.companyId);
+
+        const result = await pool.query(`
+            SELECT
+                id,
+                phone,
+                customer,
+                worker,
+                device,
+                model,
+                SN AS "SN",
+                status,
+                price,
+                pre,
+                acceptDate AS "acceptDate",
+                deadline,
+                crush,
+                note
+            FROM orders
+            WHERE company_id = $1
+            ORDER BY id DESC
+        `, [companyId]);
+
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Ошибка при получении заказов:', error);
+        res.status(500).json({ error: 'Ошибка сервера' });
+    }
+});
+
+/* 1.2 Обновление заказа */
 app.put('/orders/:id', async (req, res) => {
     try {
         const id = Number(req.params.id);
@@ -464,6 +372,342 @@ app.put('/orders/:id', async (req, res) => {
     }
 });
 
+/* 1.3 Удаление заказа */
+app.delete('/orders/:id', async (req, res) => {
+    try {
+        const id = Number(req.params.id);
+        const company_id = Number(req.query.company_id || req.body.company_id);
+
+        if (!company_id) {
+            return res.status(400).json({ error: 'company_id required' });
+        }
+
+        const beforeResult = await pool.query(
+            `SELECT id, customer, worker, model, status, price
+             FROM orders
+             WHERE id = $1 AND company_id = $2`,
+            [id, company_id]
+        );
+
+        const before = beforeResult.rows[0];
+
+        if (!before) {
+            return res.status(404).json({ error: 'Заказ не найден' });
+        }
+
+        await pool.query(
+            'DELETE FROM orders WHERE id = $1 AND company_id = $2',
+            [id, company_id]
+        );
+
+        await writeLog({
+            company_id,
+            user_id: null,
+            entity_type: 'order',
+            entity_id: id,
+            action: 'delete',
+            title: `Удалён заказ №${id}`,
+            details: before
+        });
+
+        res.json({ message: 'Заказ удалён' });
+    } catch (error) {
+        console.error('Ошибка при удалении заказа:', error);
+        res.status(500).json({ error: 'Ошибка сервера' });
+    }
+});
+
+/* 1.4 Архивация */
+app.put('/api/orders/:id/archive', async (req, res) => {
+    try {
+        const id = Number(req.params.id);
+        const { company_id, user_id } = req.body;
+
+        if (!company_id) {
+            return res.status(400).json({ error: 'company_id required' });
+        }
+
+        const beforeResult = await pool.query(
+            `SELECT id, customer, worker, model, status, price, is_archived
+             FROM orders
+             WHERE id = $1 AND company_id = $2`,
+            [id, company_id]
+        );
+
+        const before = beforeResult.rows[0];
+
+        if (!before) {
+            return res.status(404).json({ error: 'Заказ не найден' });
+        }
+
+        const result = await pool.query(
+            `UPDATE orders
+             SET is_archived = true,
+                 archived_at = NOW()
+             WHERE id = $1 AND company_id = $2
+             RETURNING *`,
+            [id, company_id]
+        );
+
+        await writeLog({
+            company_id,
+            user_id: user_id || null,
+            entity_type: 'order',
+            entity_id: id,
+            action: 'archive',
+            title: `Заказ №${id} отправлен в архив`,
+            details: {
+                before,
+                after: result.rows[0]
+            }
+        });
+
+        res.json(result.rows[0]);
+    } catch (error) {
+        console.error('Ошибка архивации заказа:', error);
+        res.status(500).json({ error: 'Ошибка сервера' });
+    }
+});
+
+/* 1.4.1 Загрузка архива */
+app.get('/api/archive/:companyId', async (req, res) => {
+    try {
+        const companyId = Number(req.params.companyId);
+
+        const result = await pool.query(`
+            SELECT
+                id,
+                phone,
+                customer,
+                worker,
+                device,
+                model,
+                SN AS "SN",
+                status,
+                price,
+                pre,
+                acceptDate AS "acceptDate",
+                deadline,
+                crush,
+                note,
+                is_archived,
+                archived_at
+                FROM orders
+                WHERE company_id = $1
+                AND is_archived = true
+                ORDER BY archived_at DESC NULLS LAST, id DESC
+                `, [companyId]);
+
+                res.json(result.rows);
+    } catch (error) {
+        console.error('Ошибка загрузки архива:', error);
+        res.status(500).json({error: 'Ошибка сервера'});
+    }
+});
+
+/* 1.5 Восстановление */
+app.put('/api/orders/:id/unarchive', async (req, res) => {
+    try {
+        const id = Number(req.params.id);
+        const { company_id, user_id } = req.body;
+
+        if (!company_id) {
+            return res.status(400).json({ error: 'company_id required' });
+        }
+
+        const beforeResult = await pool.query(
+            `SELECT id, customer, worker, model, status, price, is_archived
+             FROM orders
+             WHERE id = $1 AND company_id = $2`,
+            [id, company_id]
+        );
+
+        const before = beforeResult.rows[0];
+
+        if (!before) {
+            return res.status(404).json({ error: 'Заказ не найден' });
+        }
+
+        const result = await pool.query(
+            `UPDATE orders
+             SET is_archived = false,
+                 archived_at = NULL
+             WHERE id = $1 AND company_id = $2
+             RETURNING *`,
+            [id, company_id]
+        );
+
+        await writeLog({
+            company_id,
+            user_id: user_id || null,
+            entity_type: 'order',
+            entity_id: id,
+            action: 'unarchive',
+            title: `Заказ №${id} восстановлен из архива`,
+            details: {
+                before,
+                after: result.rows[0]
+            }
+        });
+
+        res.json(result.rows[0]);
+    } catch (error) {
+        console.error('Ошибка восстановления заказа:', error);
+        res.status(500).json({ error: 'Ошибка сервера' });
+    }
+});
+
+/******** АВТОРИЗАЦИЯ *********/
+
+/* 2. Регистрация */
+app.post('/api/register', async (req, res) => {
+    const client = await pool.connect();
+
+    try {
+        await client.query('BEGIN');
+
+        const { email, password, display_name, shop_name, phone } = req.body;
+
+        if (!email || !password || !display_name) {
+            await client.query('ROLLBACK');
+            return res.status(400).json({ error: 'email, password и display_name обязательны' });
+        }
+
+        const existingUser = await client.query(
+            'SELECT id FROM users WHERE email = $1',
+            [email]
+        );
+
+        if (existingUser.rows.length > 0) {
+            await client.query('ROLLBACK');
+            return res.status(409).json({ error: 'Пользователь с таким email уже существует' });
+        }
+
+        const companyResult = await client.query(
+            `INSERT INTO companies (name)
+             VALUES ($1)
+             RETURNING id, name`,
+            [shop_name || display_name]
+        );
+
+        const company = companyResult.rows[0];
+        const passwordHash = await bcrypt.hash(password, 10);
+
+        const userResult = await client.query(
+            `INSERT INTO users (email, password_hash, role, company_id)
+             VALUES ($1, $2, $3, $4)
+             RETURNING id, email, role, company_id`,
+            [email, passwordHash, 'master', company.id]
+        );
+
+        const user = userResult.rows[0];
+
+        await client.query(
+            `INSERT INTO user_profiles (user_id, company_id, display_name, shop_name, phone)
+             VALUES ($1, $2, $3, $4, $5)`,
+            [user.id, company.id, display_name, shop_name || null, phone || null]
+        );
+
+        await client.query(
+            `UPDATE companies
+             SET owner_user_id = $1
+             WHERE id = $2`,
+            [user.id, company.id]
+        );
+
+        await client.query('COMMIT');
+
+        res.status(201).json({
+            message: 'Пользователь зарегистрирован',
+            user: {
+                id: user.id,
+                email: user.email,
+                role: user.role,
+                company_id: user.company_id
+            }
+        });
+    } catch (error) {
+        await client.query('ROLLBACK');
+        console.error('Ошибка регистрации:', error);
+        res.status(500).json({ error: 'Ошибка сервера' });
+    } finally {
+        client.release();
+    }
+});
+
+/* 2.1 Вход */
+app.post('/api/login', async (req, res) => {
+    try {
+        const { email, password } = req.body;
+
+        if (!email || !password) {
+            return res.status(400).json({
+                error: 'email и password обязательны'
+            });
+        }
+
+        const result = await pool.query(
+            `SELECT
+                u.id,
+                u.email,
+                u.password_hash,
+                u.role,
+                u.is_active,
+                u.company_id,
+                p.display_name,
+                p.shop_name,
+                p.phone,
+                p.avatar_url
+            FROM users u
+            LEFT JOIN user_profiles p ON p.user_id = u.id
+            WHERE u.email = $1`,
+            [email]
+        );
+
+        const user = result.rows[0];
+
+        if (!user) {
+            return res.status(401).json({
+                error: 'Неверный email или пароль'
+            });
+        }
+
+        if (!user.is_active) {
+            return res.status(403).json({
+                error: 'Пользователь отключён'
+            });
+        }
+
+        const isMatch = await bcrypt.compare(password, user.password_hash);
+
+        if (!isMatch) {
+            return res.status(401).json({
+                error: 'Неверный email или пароль'
+            });
+        }
+
+        res.json({
+            message: 'Вход выполнен',
+            user: {
+                id: user.id,
+                email: user.email,
+                role: user.role,
+                company_id: user.company_id,
+                display_name: user.display_name,
+                shop_name: user.shop_name,
+                phone: user.phone,
+                avatar_url: user.avatar_url
+            }
+        });
+    } catch (error) {
+        console.error('Ошибка входа:', error);
+        res.status(500).json({ error: 'Ошибка сервера' });
+    }
+});
+
+/******** ПРОФИЛЬ *********/
+
+/* 3. Получение профиля */
 app.get('/api/profile/:id', async (req, res) => {
     try {
         const userId = req.params.id;
@@ -498,35 +742,7 @@ app.get('/api/profile/:id', async (req, res) => {
     }
 });
 
-app.get('/api/workers/:companyId', async (req, res) => {
-    try {
-        const companyId = Number(req.params.companyId);
-
-        const result = await pool.query(
-            `SELECT
-                id,
-                user_id,
-                company_id,
-                name,
-                role,
-                phone,
-                email,
-                is_active,
-                created_at,
-                updated_at
-             FROM workers
-             WHERE company_id = $1
-             ORDER BY id ASC`,
-            [companyId]
-        );
-
-        res.json(result.rows);
-    } catch (error) {
-        console.error('Ошибка загрузки сотрудников:', error);
-        res.status(500).json({ error: 'Ошибка сервера' });
-    }
-});
-
+/* 3.1 Обновление профиля */
 app.put('/api/profile/:id', async (req, res) => {
     try {
         const userId = Number(req.params.id);
@@ -614,6 +830,39 @@ app.put('/api/profile/:id', async (req, res) => {
     }
 });
 
+/******** СОТРУДНИКИ *********/
+
+/* 4. Получение сотрудников */
+app.get('/api/workers/:companyId', async (req, res) => {
+    try {
+        const companyId = Number(req.params.companyId);
+
+        const result = await pool.query(
+            `SELECT
+                id,
+                user_id,
+                company_id,
+                name,
+                role,
+                phone,
+                email,
+                is_active,
+                created_at,
+                updated_at
+             FROM workers
+             WHERE company_id = $1
+             ORDER BY id ASC`,
+            [companyId]
+        );
+
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Ошибка загрузки сотрудников:', error);
+        res.status(500).json({ error: 'Ошибка сервера' });
+    }
+});
+
+/* 4.1 Добавление */
 app.post('/api/workers', async (req, res) => {
     try {
         const { company_id, user_id, name, role, phone, email } = req.body;
@@ -655,6 +904,7 @@ app.post('/api/workers', async (req, res) => {
     }
 });
 
+/* 4.2 Редактирование */
 app.put('/api/workers/:id', async (req, res) => {
     try {
         const id = Number(req.params.id);
@@ -717,6 +967,7 @@ app.put('/api/workers/:id', async (req, res) => {
     }
 });
 
+/* 4.3 Удаление */
 app.delete('/api/workers/:id', async (req, res) => {
     try {
         const id = Number(req.params.id);
@@ -742,7 +993,9 @@ app.delete('/api/workers/:id', async (req, res) => {
     }
 });
 
+/******** УСТРОЙСТВА *********/
 
+/* 5.1 Получение */
 app.get('/api/devices/:companyId', async (req, res) => {
     try {
         const companyId = Number(req.params.companyId);
@@ -762,6 +1015,7 @@ app.get('/api/devices/:companyId', async (req, res) => {
     }
 });
 
+/* 5.2 Добавление */
 app.post('/api/devices', async (req, res) => {
     try {
         const { company_id, user_id, name } = req.body;
@@ -792,6 +1046,7 @@ app.post('/api/devices', async (req, res) => {
     }
 });
 
+/* 5.3 Удаление */
 app.delete('/api/devices/:id', async (req, res) => {
     try {
         const id = Number(req.params.id);
@@ -819,6 +1074,9 @@ app.delete('/api/devices/:id', async (req, res) => {
     }
 });
 
+/******** СТАТУСЫ *********/
+
+/* 6.1 Получение */
 app.get('/api/statuses/:companyId', async (req, res) => {
     try {
         const companyId = Number(req.params.companyId);
@@ -840,6 +1098,7 @@ app.get('/api/statuses/:companyId', async (req, res) => {
     }
 });
 
+/* 6.2 Добавление */
 app.post('/api/statuses', async (req, res) => {
     try {
         const { company_id, user_id, name } = req.body;
@@ -870,6 +1129,7 @@ app.post('/api/statuses', async (req, res) => {
     }
 });
 
+/* 6.3 Удаление */
 app.delete('/api/statuses/:id', async (req, res) => {
     try {
         const id = Number(req.params.id);
@@ -897,34 +1157,36 @@ app.delete('/api/statuses/:id', async (req, res) => {
     }
 });
 
-async function writeLog({
-    company_id,
-    user_id = null,
-    entity_type,
-    entity_id = null,
-    action,
-    title,
-    details = null
-}) {
-    try {
-        await pool.query(
-            `INSERT INTO logs (company_id, user_id, entity_type, entity_id, action, title, details)
-             VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-            [
-                company_id,
-                user_id,
-                entity_type,
-                entity_id,
-                action,
-                title,
-                details ? JSON.stringify(details) : null
-            ]
-        );
-    } catch (error) {
-        console.error('Ошибка записи лога:', error);
-    }
-}
+/******** КОНТАКТЫ *********/
 
+app.get('/api/contacts/:companyId', async (req, res) => {
+    try {
+        const companyId = Number(req.params.companyId);
+        const q = String(req.query.q || '').trim();
+
+        const result = await pool.query(
+            `SELECT id, customer_name, phone, phone_normalized, last_used_at
+             FROM contacts
+             WHERE company_id = $1
+               AND (
+                    $2 = ''
+                    OR customer_name ILIKE '%' || $2 || '%'
+                    OR phone ILIKE '%' || $2 || '%'
+                    OR phone_normalized ILIKE '%' || $2 || '%'
+               )
+             ORDER BY last_used_at DESC, id DESC
+             LIMIT 10`,
+            [companyId, q]
+        );
+
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Ошибка загрузки контактов:', error);
+        res.status(500).json({ error: 'Ошибка сервера' });
+    }
+});
+
+/******** ЛОГИ *********/
 app.get('/api/logs/:companyId', async (req, res) => {
     try {
         const companyId = Number(req.params.companyId);
@@ -956,333 +1218,9 @@ app.get('/api/logs/:companyId', async (req, res) => {
     }
 });
 
-app.get('/orders/:companyId', async (req, res) => {
-    try {
-        const companyId = Number(req.params.companyId);
+/******** ШАБЛОНЫ ДОКУМЕНТОВ *********/
 
-        const result = await pool.query(`
-            SELECT
-                id,
-                phone,
-                customer,
-                worker,
-                device,
-                model,
-                SN AS "SN",
-                status,
-                price,
-                pre,
-                acceptDate AS "acceptDate",
-                deadline,
-                crush,
-                note
-            FROM orders
-            WHERE company_id = $1
-            ORDER BY id DESC
-        `, [companyId]);
-
-        res.json(result.rows);
-    } catch (error) {
-        console.error('Ошибка при получении заказов:', error);
-        res.status(500).json({ error: 'Ошибка сервера' });
-    }
-});
-
-app.get('/api/contacts/:companyId', async (req, res) => {
-    try {
-        const companyId = Number(req.params.companyId);
-        const q = String(req.query.q || '').trim();
-
-        const result = await pool.query(
-            `SELECT id, customer_name, phone, phone_normalized, last_used_at
-             FROM contacts
-             WHERE company_id = $1
-               AND (
-                    $2 = ''
-                    OR customer_name ILIKE '%' || $2 || '%'
-                    OR phone ILIKE '%' || $2 || '%'
-                    OR phone_normalized ILIKE '%' || $2 || '%'
-               )
-             ORDER BY last_used_at DESC, id DESC
-             LIMIT 10`,
-            [companyId, q]
-        );
-
-        res.json(result.rows);
-    } catch (error) {
-        console.error('Ошибка загрузки контактов:', error);
-        res.status(500).json({ error: 'Ошибка сервера' });
-    }
-});
-
-app.get('/api/archive/:companyId', async (req, res) => {
-    try {
-        const companyId = Number(req.params.companyId);
-
-        const result = await pool.query(`
-            SELECT
-                id,
-                phone,
-                customer,
-                worker,
-                device,
-                model,
-                SN AS "SN",
-                status,
-                price,
-                pre,
-                acceptDate AS "acceptDate",
-                deadline,
-                crush,
-                note,
-                is_archived,
-                archived_at
-                FROM orders
-                WHERE company_id = $1
-                AND is_archived = true
-                ORDER BY archived_at DESC NULLS LAST, id DESC
-                `, [companyId]);
-
-                res.json(result.rows);
-    } catch (error) {
-        console.error('Ошибка загрузки архива:', error);
-        res.status(500).json({error: 'Ошибка сервера'});
-    }
-});
-
-app.get('/orders', async (req, res) => {
-    try {
-        const { company_id } = req.query;
-
-        if (!company_id) {
-            return res.status(400).json({ error: 'company_id required' });
-        }
-
-        const result = await pool.query(`
-            SELECT
-                id,
-                phone,
-                customer,
-                worker,
-                device,
-                model,
-                SN AS "SN",
-                status,
-                price,
-                pre,
-                acceptDate AS "acceptDate",
-                deadline,
-                crush,
-                note,
-                is_archived,
-                archived_at
-            FROM orders
-            WHERE company_id = $1
-              AND is_archived = false
-            ORDER BY id DESC
-        `, [company_id]);
-
-        res.json(result.rows);
-    } catch (error) {
-        console.error('Ошибка при получении заказов:', error);
-        res.status(500).json({ error: 'Ошибка сервера' });
-    }
-});
-
-app.put('/api/orders/:id/unarchive', async (req, res) => {
-    try {
-        const id = Number(req.params.id);
-        const { company_id, user_id } = req.body;
-
-        if (!company_id) {
-            return res.status(400).json({ error: 'company_id required' });
-        }
-
-        const beforeResult = await pool.query(
-            `SELECT id, customer, worker, model, status, price, is_archived
-             FROM orders
-             WHERE id = $1 AND company_id = $2`,
-            [id, company_id]
-        );
-
-        const before = beforeResult.rows[0];
-
-        if (!before) {
-            return res.status(404).json({ error: 'Заказ не найден' });
-        }
-
-        const result = await pool.query(
-            `UPDATE orders
-             SET is_archived = false,
-                 archived_at = NULL
-             WHERE id = $1 AND company_id = $2
-             RETURNING *`,
-            [id, company_id]
-        );
-
-        await writeLog({
-            company_id,
-            user_id: user_id || null,
-            entity_type: 'order',
-            entity_id: id,
-            action: 'unarchive',
-            title: `Заказ №${id} восстановлен из архива`,
-            details: {
-                before,
-                after: result.rows[0]
-            }
-        });
-
-        res.json(result.rows[0]);
-    } catch (error) {
-        console.error('Ошибка восстановления заказа:', error);
-        res.status(500).json({ error: 'Ошибка сервера' });
-    }
-});
-
-app.put('/api/orders/:id/archive', async (req, res) => {
-    try {
-        const id = Number(req.params.id);
-        const { company_id, user_id } = req.body;
-
-        if (!company_id) {
-            return res.status(400).json({ error: 'company_id required' });
-        }
-
-        const beforeResult = await pool.query(
-            `SELECT id, customer, worker, model, status, price, is_archived
-             FROM orders
-             WHERE id = $1 AND company_id = $2`,
-            [id, company_id]
-        );
-
-        const before = beforeResult.rows[0];
-
-        if (!before) {
-            return res.status(404).json({ error: 'Заказ не найден' });
-        }
-
-        const result = await pool.query(
-            `UPDATE orders
-             SET is_archived = true,
-                 archived_at = NOW()
-             WHERE id = $1 AND company_id = $2
-             RETURNING *`,
-            [id, company_id]
-        );
-
-        await writeLog({
-            company_id,
-            user_id: user_id || null,
-            entity_type: 'order',
-            entity_id: id,
-            action: 'archive',
-            title: `Заказ №${id} отправлен в архив`,
-            details: {
-                before,
-                after: result.rows[0]
-            }
-        });
-
-        res.json(result.rows[0]);
-    } catch (error) {
-        console.error('Ошибка архивации заказа:', error);
-        res.status(500).json({ error: 'Ошибка сервера' });
-    }
-});
-
-async function upsertContact(company_id, customer_name, phone) {
-    const phone_normalized = normalizePhone(phone);
-
-    if (!customer_name || !phone_normalized) return null;
-
-    const existing = await pool.query(
-        `SELECT id
-         FROM contacts
-         WHERE company_id = $1 AND phone_normalized = $2`,
-        [company_id, phone_normalized]
-    );
-
-    if (existing.rows[0]) {
-        const result = await pool.query(
-            `UPDATE contacts
-             SET customer_name = $1,
-                 phone = $2,
-                 updated_at = NOW(),
-                 last_used_at = NOW()
-             WHERE id = $3
-             RETURNING *`,
-            [customer_name, phone, existing.rows[0].id]
-        );
-        return result.rows[0];
-    }
-
-    const result = await pool.query(
-        `INSERT INTO contacts (company_id, customer_name, phone, phone_normalized)
-         VALUES ($1, $2, $3, $4)
-         RETURNING *`,
-        [company_id, customer_name, phone, phone_normalized]
-    );
-
-    return result.rows[0];
-}
-
-function normalizePhone(phone = '') {
-    return String(phone).replace(/\D/g, '');
-}
-
-async function upsertDevice(company_id, user_id, name) {
-    const trimmed = String(name || '').trim();
-    if (!trimmed) return null;
-
-    const existing = await pool.query(
-        `SELECT id, name
-         FROM devices
-         WHERE company_id = $1
-           AND LOWER(name) = LOWER($2)
-         LIMIT 1`,
-        [company_id, trimmed]
-    );
-
-    if (existing.rows[0]) return existing.rows[0];
-
-    const result = await pool.query(
-        `INSERT INTO devices (company_id, user_id, name)
-         VALUES ($1, $2, $3)
-         RETURNING *`,
-        [company_id, user_id || null, trimmed]
-    );
-
-    return result.rows[0];
-}
-
-const DEFAULT_STATUSES = [
-    'Принят',
-    'В работе',
-    'Ждёт запчастей',
-    'На согласовании',
-    'Без ремонта',
-    'Сделан',
-    'Отменён'
-];
-
-async function ensureDefaultStatuses(company_id, user_id = null) {
-    const existing = await pool.query(
-        `SELECT id FROM statuses WHERE company_id = $1 LIMIT 1`,
-        [company_id]
-    );
-
-    if (existing.rows.length > 0) return;
-
-    for (const name of DEFAULT_STATUSES) {
-        await pool.query(
-            `INSERT INTO statuses (user_id, company_id, name)
-             VALUES ($1, $2, $3)
-             ON CONFLICT DO NOTHING`,
-            [user_id, company_id, name]
-        );
-    }
-}
+/* 9.1 Получение */
 
 app.post('/api/templates/upload', uploadTemplate.single('template'), async (req, res) => {
     try {
@@ -1307,24 +1245,6 @@ app.post('/api/templates/upload', uploadTemplate.single('template'), async (req,
     }
 });
 
-app.get('/api/barcode/:text', async (req, res) => {
-    try {
-        const png = await bwipjs.toBuffer({
-            bcid: 'code128',
-            text: String(req.params.text),
-            scale: 3,
-            height: 12,
-            includetext: false
-        });
-
-        res.type('png');
-        res.send(png);
-    } catch (error) {
-        console.error('Ошибка генерации штрихкода:', error);
-        res.status(500).json({ error: 'Не удалось сгенерировать штрихкод' });
-    }
-});
-
 app.get('/api/templates/:companyId', async (req, res) => {
     try {
         const companyId = Number(req.params.companyId);
@@ -1343,6 +1263,8 @@ app.get('/api/templates/:companyId', async (req, res) => {
         res.status(500).json({ error: 'Ошибка сервера' });
     }
 });
+
+/* 9.2 Удаление */
 
 app.delete('/api/templates/:id', async (req, res) => {
     try {
@@ -1371,6 +1293,30 @@ app.delete('/api/templates/:id', async (req, res) => {
         res.status(500).json({ error: 'Ошибка сервера' });
     }
 });
+
+/******** ГЕНЕРАЦИЯ ДОКУМЕНТОВ *********/
+
+/* 10.1 Штрихкод */
+
+app.get('/api/barcode/:text', async (req, res) => {
+    try {
+        const png = await bwipjs.toBuffer({
+            bcid: 'code128',
+            text: String(req.params.text),
+            scale: 3,
+            height: 12,
+            includetext: false
+        });
+
+        res.type('png');
+        res.send(png);
+    } catch (error) {
+        console.error('Ошибка генерации штрихкода:', error);
+        res.status(500).json({ error: 'Не удалось сгенерировать штрихкод' });
+    }
+});
+
+/* 10.2 Документ */
 
 app.post('/api/documents/generate', async (req, res) => {
     try {
@@ -1436,6 +1382,188 @@ app.post('/api/documents/generate', async (req, res) => {
     }
 });
 
+/* 10.1 Взаимодействие с ИИ */
+
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+const axios = require("axios");
+const qs = require("qs");
+const { v4: uuidv4 } = require("uuid");
+
+dotenv.config();
+
+app.use(express.static("public"));
+
+const OAUTH_URL =
+  "https://ngw.devices.sberbank.ru:9443/api/v2/oauth";
+
+const CHAT_URL =
+  "https://gigachat.devices.sberbank.ru/api/v1/chat/completions";
+
+async function getToken() {
+  const data = qs.stringify({
+    scope: "GIGACHAT_API_PERS",
+  });
+
+  const res = await axios({
+    method: "post",
+    url: OAUTH_URL,
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+      Accept: "application/json",
+      RqUID: uuidv4(),
+      Authorization: `Basic ${process.env.GIGA_CHAT_CREDENTIALS}`,
+    },
+    data,
+  });
+
+  return res.data.access_token;
+}
+
+async function chat(token, message) {
+  const res = await axios({
+    method: "post",
+    url: CHAT_URL,
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    data: {
+      model: "GigaChat-2",
+      messages: [
+        {
+          role: "user",
+          content: message,
+        },
+      ],
+      profanity_check: true,
+    },
+  });
+
+  return res.data;
+}
+
+app.post("/chat", async (req, res) => {
+  try {
+    const { message } = req.body;
+
+    const token = await getToken();
+    const response = await chat(token, message);
+
+    const text =
+      response?.choices?.[0]?.message?.content || response;
+
+    res.json({ text });
+  } catch (err) {
+    console.log("ERROR STATUS:", err.response?.status);
+    console.log("ERROR DATA:", err.response?.data);
+
+    res.status(500).json({
+      error: err.response?.data || err.message,
+    });
+  }
+});
+
+/******** ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ *********/
+
+/* normalizePhone */
+function normalizePhone(phone = '') {
+    return String(phone).replace(/\D/g, '');
+}
+
+/* writeLog */
+async function writeLog({
+    company_id,
+    user_id = null,
+    entity_type,
+    entity_id = null,
+    action,
+    title,
+    details = null
+}) {
+    try {
+        await pool.query(
+            `INSERT INTO logs (company_id, user_id, entity_type, entity_id, action, title, details)
+             VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+            [
+                company_id,
+                user_id,
+                entity_type,
+                entity_id,
+                action,
+                title,
+                details ? JSON.stringify(details) : null
+            ]
+        );
+    } catch (error) {
+        console.error('Ошибка записи лога:', error);
+    }
+}
+
+/* upsertDevice */
+async function upsertDevice(company_id, user_id, name) {
+    const trimmed = String(name || '').trim();
+    if (!trimmed) return null;
+
+    const existing = await pool.query(
+        `SELECT id, name
+         FROM devices
+         WHERE company_id = $1
+           AND LOWER(name) = LOWER($2)
+         LIMIT 1`,
+        [company_id, trimmed]
+    );
+
+    if (existing.rows[0]) return existing.rows[0];
+
+    const result = await pool.query(
+        `INSERT INTO devices (company_id, user_id, name)
+         VALUES ($1, $2, $3)
+         RETURNING *`,
+        [company_id, user_id || null, trimmed]
+    );
+
+    return result.rows[0];
+}
+
+/* upsertContact */
+async function upsertContact(company_id, customer_name, phone) {
+    const phone_normalized = normalizePhone(phone);
+
+    if (!customer_name || !phone_normalized) return null;
+
+    const existing = await pool.query(
+        `SELECT id
+         FROM contacts
+         WHERE company_id = $1 AND phone_normalized = $2`,
+        [company_id, phone_normalized]
+    );
+
+    if (existing.rows[0]) {
+        const result = await pool.query(
+            `UPDATE contacts
+             SET customer_name = $1,
+                 phone = $2,
+                 updated_at = NOW(),
+                 last_used_at = NOW()
+             WHERE id = $3
+             RETURNING *`,
+            [customer_name, phone, existing.rows[0].id]
+        );
+        return result.rows[0];
+    }
+
+    const result = await pool.query(
+        `INSERT INTO contacts (company_id, customer_name, phone, phone_normalized)
+         VALUES ($1, $2, $3, $4)
+         RETURNING *`,
+        [company_id, customer_name, phone, phone_normalized]
+    );
+
+    return result.rows[0];
+}
+
+/* formatDate */
 function formatDate(value) {
     if (!value) return '';
     const d = new Date(value);
@@ -1446,22 +1574,41 @@ function formatDate(value) {
     return `${day}.${month}.${year}`;
 }
 
+/* formatMoney */
 function formatMoney(value) {
     const num = Number(value);
-    return Number.isFinite(num) ? String(num) : '0';
+    if (!num) return '0';
+    return String(num);
 }
 
-function normalizePhone(phone = '') {
-    return String(phone).replace(/\D/g, '');
-}
-
+/* addDays */
 function addDays(dateValue, days) {
     const d = new Date(dateValue);
-    if (isNaN(d)) return null;
+    if (isNaN(d)) return '';
     d.setDate(d.getDate() + days);
     return d;
 }
 
+/* ensureDefaultStatuses */
+async function ensureDefaultStatuses(company_id, user_id = null) {
+    const existing = await pool.query(
+        `SELECT id FROM statuses WHERE company_id = $1 LIMIT 1`,
+        [company_id]
+    );
+
+    if (existing.rows.length > 0) return;
+
+    for (const name of DEFAULT_STATUSES) {
+        await pool.query(
+            `INSERT INTO statuses (user_id, company_id, name)
+             VALUES ($1, $2, $3)
+             ON CONFLICT DO NOTHING`,
+            [user_id, company_id, name]
+        );
+    }
+}
+
+/* generateBarcodeBase64 */
 async function generateBarcodeBase64(text) {
     const png = await bwipjs.toBuffer({
         bcid: 'code128',
@@ -1474,6 +1621,7 @@ async function generateBarcodeBase64(text) {
     return png.toString('base64');
 }
 
+/* buildTemplateData */
 async function buildTemplateData(company_id, order_id) {
     const orderResult = await pool.query(
         `SELECT *
@@ -1537,19 +1685,7 @@ async function buildTemplateData(company_id, order_id) {
     };
 }
 
-function formatMoney(value) {
-    const num = Number(value);
-    if (!num) return '0';
-    return String(num);
-}
-
-function addDays(dateValue, days) {
-    const d = new Date(dateValue);
-    if (isNaN(d)) return '';
-    d.setDate(d.getDate() + days);
-    return d;
-}
-
+/******** ЗАПУСК СЕРВЕРА *********/
 app.listen(3000, () => {
     console.log('3000');
 });

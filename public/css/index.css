@@ -213,7 +213,7 @@ main {
     margin-top: 8px;
 }
 
-#modal-button {
+#modal-button, .dop-button {
     height: 40px;
     border: none;
     border-radius: 6px;
@@ -225,7 +225,7 @@ main {
     background: #007bff;
 }
 
-#modal-button:hover {
+#modal-button:hover, .dop-button {
     opacity: 0.9;
 }
 
@@ -279,6 +279,12 @@ main {
     width: 100%;
 }
 
+#out {
+    margin-top: 1vh;
+    white-space: pre-wrap; /* сохранение абзацев и списков */
+    line-height: 1.5; 
+}
+
 @media (max-width: 900px) {
     #modal-window {
         padding: 16px;
@@ -293,7 +299,7 @@ main {
         flex-direction: column;
     }
 
-    #modal-button {
+    #modal-button, .dop-button {
         width: 100%;
     }
 }
