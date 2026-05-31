@@ -32,7 +32,7 @@
 
 [data-theme="dark"] #headName {
     color: white;
-}
+} 
 
 /* модальное окно */
 
@@ -93,6 +93,16 @@
 
 [data-theme="dark"] .feature-card {
     color: black;
+}
+
+/* админ-панель */
+
+[data-theme="dark"] .user-card, [data-theme="dark"] .company-card, [data-theme="dark"] .AI-card {
+    background-color: #575656;
+}
+
+[data-theme="dark"] .worker-card {
+    background-color: black;
 }
 
 /* модальное меню */

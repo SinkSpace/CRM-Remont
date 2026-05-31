@@ -22,14 +22,9 @@ if (logoutButton) {
 }
 
 const userJoin = JSON.parse(localStorage.getItem('user'));
-
-/* const emailElement = document.getElementById('userEmail'); */
 const userElement = document.getElementById('userName');
 
 if (userJoin) {
-    /*if (emailElement) {
-        emailElement.textContent = userJoin.email || '';
-    }*/
 
     if (userElement) {
         userElement.textContent = userJoin.shop_name || userJoin.display_name || '';

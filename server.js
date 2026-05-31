@@ -2081,9 +2081,9 @@ app.put('/api/admin/settings', async (req, res) => {
 
 /******** ЗАПУСК СЕРВЕРА *********/
 
-const PORT = '3000';
+const PORT = '80';
 const HOST = '0.0.0.0';
 
 app.listen(PORT, HOST, () => {
-    console.log('3000');
+    console.log('Сервер запущен, домен crmsink.ru ($1:$2)', [HOST, PORT]);
 });
