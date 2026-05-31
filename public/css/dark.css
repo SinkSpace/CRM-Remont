@@ -3,6 +3,10 @@
     color: white;
 }
 
+[data-theme="dark"] input {
+    color: white;
+}
+
 [data-theme="dark"] #mainHead div:active, [data-theme="dark"] #mainHead div:hover {
     color: #2C97F2;
 }
