@@ -1,8 +1,5 @@
 const user = JSON.parse(localStorage.getItem('user'));
-
-if (!user) {
-    window.location.href = '/join';
-}
+if (!user) window.location.href = '/start';
 
 const tabButtons = document.querySelectorAll('.settings-tab');
 const tabPanels = document.querySelectorAll('.settings-panel');
@@ -35,6 +32,8 @@ document.addEventListener('DOMContentLoaded', () => {
     bindStatusCreate();
     loadTemplates();
     bindTemplateUpload();
+    loadWarrantyTemplates();
+    bindWarrantyTemplateUpload();
 });
 
 async function loadDevices() {
@@ -154,6 +153,21 @@ async function loadProfile() {
     try {
         const response = await fetch(`/api/profile/${user.id}`);
         const data = await response.json();
+        const workTimeStartInput = document.getElementById('workTimeStart');
+        const workTimeEndInput = document.getElementById('workTimeEnd');
+
+        if (workTimeStartInput) workTimeStartInput.value = data.work_time_start || '';
+        if (workTimeEndInput) workTimeEndInput.value = data.work_time_end || '';
+
+        const workDays = Array.isArray(data.work_days) ? data.work_days : [];
+
+        document.querySelectorAll('.day').forEach(button => {
+            button.classList.toggle('active', workDays.includes(button.dataset.day));
+
+            button.addEventListener('click', () => {
+                button.classList.toggle('active');
+            });
+        });
 
         if (!response.ok) {
             throw new Error(data.error || 'Ошибка загрузки профиля');
@@ -188,6 +202,11 @@ function bindProfileSave() {
             const city = document.getElementById('city').value.trim();
             const address = document.getElementById('address').value.trim();
             const phone = document.getElementById('phone').value.trim();
+            const work_days = Array.from(document.querySelectorAll('.day.active'))
+            .map(button => button.dataset.day);
+            const work_time_start = document.getElementById('workTimeStart').value;
+            const work_time_end = document.getElementById('workTimeEnd').value;
+
 
             if (!display_name) {
                 alert('Название обязательно');
@@ -204,7 +223,10 @@ function bindProfileSave() {
                     shop_name,
                     city,
                     address,
-                    phone
+                    phone,
+                    work_days,
+                    work_time_start,
+                    work_time_end
                 })
             });
 
@@ -267,22 +289,22 @@ function renderWorkers(workers) {
         card.dataset.id = worker.id;
 
         card.innerHTML = `
-            <input class="worker-name" value="${escapeHtml(worker.name || '')}">
-            <select class="worker-role">
-                <option ${worker.role === 'Владелец' ? 'selected' : ''}>Владелец</option>
+            <p><input class="worker-name" value="${escapeHtml(worker.name || '')}"></p>
+            <p><select class="worker-role">
+                <option ${worker.role === 'Администратор' ? 'selected' : ''}>Администратор</option>
                 <option ${worker.role === 'Менеджер' ? 'selected' : ''}>Менеджер</option>
                 <option ${worker.role === 'Сотрудник' ? 'selected' : ''}>Сотрудник</option>
-            </select>
-            <input class="worker-phone" value="${escapeHtml(worker.phone || '')}" placeholder="Телефон">
-            <input class="worker-email" value="${escapeHtml(worker.email || '')}" placeholder="Email">
-            <label>
+            </select></p>
+            <p><input class="worker-phone" value="${escapeHtml(worker.phone || '')}" placeholder="Телефон"></p>
+            <p><input class="worker-email" value="${escapeHtml(worker.email || '')}" placeholder="Email"></p>
+            <p><label>
                 <input class="worker-active" style="width: auto; height: auto" type="checkbox" ${worker.is_active ? 'checked' : ''}>
                 Активен
-            </label>
-            <div class="worker-actions">
+            </label></p>
+            <p><div class="worker-actions">
                 <button class="save-worker-button">Сохранить</button>
                 <button class="delete-worker-button">Удалить</button>
-            </div>
+            </div></p>
         `;
 
         const saveButton = card.querySelector('.save-worker-button');
@@ -304,7 +326,7 @@ function bindWorkerCreate() {
 
 async function loadTemplates() {
     try {
-        const response = await fetch(`/api/templates/${user.company_id}`);
+        const response = await fetch(`/api/templates/${user.company_id}?type=act`);
         const data = await response.json();
 
         if (!response.ok) {
@@ -365,6 +387,7 @@ async function uploadTemplate() {
         formData.append('company_id', user.company_id);
         formData.append('user_id', user.id);
         formData.append('template', file);
+        formData.append('type', 'act');
 
         const response = await fetch('/api/templates/upload', {
             method: 'POST',
@@ -403,6 +426,112 @@ async function deleteTemplate(id) {
         await loadTemplates();
     } catch (error) {
         console.error('Ошибка удаления шаблона:', error);
+        alert(error.message);
+    }
+}
+
+async function loadWarrantyTemplates() {
+    try {
+        const response = await fetch(`/api/templates/${user.company_id}?type=warranty`);
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || 'Ошибка загрузки шаблонов гарантии');
+        }
+
+        renderWarrantyTemplates(Array.isArray(data) ? data : []);
+    } catch (error) {
+        console.error('Ошибка загрузки шаблонов гарантии:', error);
+        alert(error.message);
+    }
+}
+
+function renderWarrantyTemplates(templates) {
+    const container = document.getElementById('warrantyList');
+    if (!container) return;
+
+    container.innerHTML = '';
+
+    if (!templates.length) {
+        container.innerHTML = '<p>Шаблонов гарантии пока нет</p>';
+        return;
+    }
+
+    templates.forEach(template => {
+        const card = document.createElement('div');
+        card.className = 'device-card';
+        card.innerHTML = `
+            <span class="device-name">${escapeHtml(template.name)} (${escapeHtml(template.original_name)})</span>
+            <button class="delete-device-button">Удалить</button>
+        `;
+
+        card.querySelector('button').addEventListener('click', () => deleteWarrantyTemplate(template.id));
+        container.appendChild(card);
+    });
+}
+
+function bindWarrantyTemplateUpload() {
+    const button = document.getElementById('uploadWarrantyTemplateButton');
+    if (!button) return;
+
+    button.addEventListener('click', uploadWarrantyTemplate);
+}
+
+async function uploadWarrantyTemplate() {
+    try {
+        const name = document.getElementById('warrantyTemplateNameInput').value.trim();
+        const fileInput = document.getElementById('warrantyTemplateFileInput');
+        const file = fileInput.files[0];
+
+        if (!name || !file) {
+            alert('Укажи название и выбери docx-файл');
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('name', name);
+        formData.append('company_id', user.company_id);
+        formData.append('user_id', user.id);
+        formData.append('template', file);
+        formData.append('type', 'warranty');
+
+        const response = await fetch('/api/templates/upload', {
+            method: 'POST',
+            body: formData
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || 'Ошибка загрузки шаблона гарантии');
+        }
+
+        document.getElementById('warrantyTemplateNameInput').value = '';
+        fileInput.value = '';
+        await loadWarrantyTemplates();
+    } catch (error) {
+        console.error('Ошибка загрузки шаблона гарантии:', error);
+        alert(error.message);
+    }
+}
+
+async function deleteWarrantyTemplate(id) {
+    try {
+        const response = await fetch(`/api/templates/${id}`, {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ company_id: user.company_id })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || 'Ошибка удаления шаблона гарантии');
+        }
+
+        await loadWarrantyTemplates();
+    } catch (error) {
+        console.error('Ошибка удаления шаблона гарантии:', error);
         alert(error.message);
     }
 }

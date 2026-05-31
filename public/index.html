@@ -7,28 +7,34 @@
     <link rel="stylesheet" href="css/uni.css">
     <link rel="stylesheet" href="css/mobile.css">
     <link rel="stylesheet" href="css/dark.css">
-    <title>CRM</title>
+    <title>Главная страница</title>
 </head>
 <body>
     <nav class="parent">
         <div class="parent" id="headName">
-            <img alt="Меню" src="menu.svg" id="menu">
-            <h1>CRM</h1>
+            <img alt="Меню" src="menu.svg" id="menu" style="display: none;">
+            <h1>Система</h1>
         </div>
         <div>
-            <input id="search" placeholder="🔍" data-theme="dark">
-            <select id="filter" data-theme="dark">
+            <input id="search" placeholder="🔍">
+            <select id="filter">
                 <option>Все статусы</option>
             </select>
         </div>
         <div id="nameShop">
-            <span id="userName"></span>
-            <span id="userEmail"></span>
+            <p id="userName"></p>
+            <a href="/"><img alt="Главная" src="svg/shop.svg" id="main"></a>
+            <a href="/statistic"><img alt="Статистика" src="svg/statistics.svg" id="stat"></a>
+            <a href="/logs"><img alt="Журнал действий" src="svg/file.svg" id="logs"></a>
+            <a href="/settings"><img alt="Настройки" src="svg/settings.svg" id="sett"></a>
+            <img alt="Выход" src="svg/export.svg" id="logoutButton">
         </div>
     </nav>
     <header class="parent">
+        <a href="/archive"><button style="background-color: gray;">Архив</button></a>
         <button style="visibility: hidden;">Добавить заказ</button>
         <h2>Список заказов</h2>
+        <button style="visibility: hidden;">Архив</button>
         <button id="addOrder">Добавить заказ</button>
     </header>
     <main>
@@ -145,10 +151,12 @@
             </div>
 
             <div class="modal-actions">
+                <section>
                 <button id="modal-button" type="button">Добавить</button>
                 <button id="docButton" class="dop-button" type="button" style="display: none;">Создать документ</button>
-                <button id="archiveButton" class="dop-button" type="button" style="display: none;">Архивировать</button>
                 <button id="aiButton" class="dop-button" type="button" style="display: none;">Спросить ИИ</button>
+                </section>
+                <button id="archiveButton" class="dop-button" type="button" style="display: none; background-color: lime;">Выдать</button>
             </div>
         </div>
 
@@ -162,7 +170,7 @@
             <a href="/"><button>Список заказов</button></a>
             <a href="/archive"><button>Архив</button></a>
             <a href="/settings"><button>Настройки</button></a>
-            <a href="/logs"><button>Логи</button></a>
+            <a href="/logs"><button>Журнал действий</button></a>
             <a id="logoutButton"><button>Выход</button></a>
         </div>
     </div>

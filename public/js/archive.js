@@ -1,5 +1,5 @@
 const user = JSON.parse(localStorage.getItem('user'));
-if (!user) window.location.href = '/join';
+if (!user) window.location.href = '/start';
 
 const search = document.getElementById('search');
 let archiveTasks = [];
@@ -72,7 +72,7 @@ function renderArchiveTasks() {
             <div class="days-cell">${formattedDateTime(task.archived_at)}</div>
             <div class="tdEdit">
                 <button onclick="unarchiveTask(${task.id})">↩️</button>
-                <button onclick="deleteTask(${task.id})">❌</button>
+                <button onclick="warrantyTask(${task.id})">📃</button>
             </div>
         `;
 
@@ -83,7 +83,7 @@ function renderArchiveTasks() {
 function unarchiveTask(id) {
     if (!confirm('Восстановить заказ из архива?')) return;
 
-    fetch(`/api/orders/${id}/unarchive`, {
+    fetch(`/api/orders/:id/unarchive`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -133,19 +133,53 @@ function escapeHtml(value) {
         .replaceAll("'", '&#039;');
 }
 
-/* удаление задачи */
-function deleteTask(id) {
-    if (confirm("Удалить?")) {
-        fetch(`/orders/${id}`, {
-            method: 'DELETE',
+async function warrantyTask(orderId) {
+    try {
+        const responseTemplates = await fetch(`/api/templates/${user.company_id}?type=warranty`);
+        const templates = await responseTemplates.json();
+
+        if (!responseTemplates.ok) {
+            throw new Error(templates.error || 'Ошибка загрузки шаблонов');
+        }
+
+        if (!templates.length) {
+            alert('Сначала загрузите шаблон гарантии в настройках');
+            return;
+        }
+
+        const warrantyTemplate =
+            templates.find(t => String(t.name).toLowerCase().includes('гарант')) ||
+            templates[0];
+
+        const response = await fetch('/api/documents/generate', {
+            method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                company_id: user.company_id
+                company_id: user.company_id,
+                user_id: user.id,
+                order_id: orderId,
+                template_id: warrantyTemplate.id
             })
-        })
-        .then(() => {
-            loadArchiveTasks();
-        })
-        .catch(error => console.error('Ошибка при удалении:', error));
+        });
+
+        if (!response.ok) {
+            const data = await response.json();
+            throw new Error(data.error || 'Ошибка генерации гарантии');
+        }
+
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `warranty-order-${orderId}.docx`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+
+        window.URL.revokeObjectURL(url);
+    } catch (error) {
+        console.error('Ошибка генерации гарантии:', error);
+        alert(error.message);
     }
 }

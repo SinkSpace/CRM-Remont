@@ -3,21 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="css/settings.css">
+    <link rel="stylesheet" href="css/admin.css">
     <link rel="stylesheet" href="css/uni.css">
     <link rel="stylesheet" href="css/mobile.css">
     <link rel="stylesheet" href="css/dark.css">
-    <title>CRM</title>
+    <title>Админ-панель</title>
 </head>
 <body>
     <nav class="parent">
         <div class="parent" id="headName">
-            <img alt="Меню" src="menu.svg" id="menu">
-            <h1>CRM</h1>
+            <img alt="Меню" src="menu.svg" id="menu" style="display: none;">
+            <h1>Система</h1>
         </div>
         <div id="nameShop">
-            <span id="userName"></span>
-            <span id="userEmail"></span>
+            <p id="userName"></p>
+            <a href="/"><img alt="Главная" src="svg/shop.svg" id="main"></a>
+            <a href="/statistic"><img alt="Статистика" src="svg/statistics.svg" id="stat"></a>
+            <a href="/logs"><img alt="Журнал действий" src="svg/file.svg" id="logs"></a>
+            <a href="/settings"><img alt="Настройки" src="svg/settings.svg" id="sett"></a>
+            <img alt="Профиль" src="svg/businessman.svg" id="profile">
         </div>
     </nav>
     <header class="parent">
@@ -27,60 +31,76 @@
     </header>
     <main>
         <div id="sidebar">
-            <p><button class="settings-tab active" data-tab="company">Компания</button></p>
-            <p><button class="settings-tab" data-tab="workers">Сотрудники</button></p>
-            <p><button class="settings-tab" data-tab="devices">Устройства</button></p>
-            <p><button class="settings-tab" data-tab="statuses">Статусы</button></p>
+            <p><button class="settings-tab active" data-tab="stats">Статистика</button></p>
+            <p><button class="settings-tab" data-tab="users">Пользователи</button></p>
+            <p><button class="settings-tab" data-tab="companies">Компании</button></p>
+            <p><button class="settings-tab" data-tab="ai">ИИ</button></p>
+            <p><button class="settings-tab" data-tab="system">Система</button></p>
         </div>
-
         <div id="hm">
-            <section class="settings-panel active" id="tab-company">
-                <h3>Компания</h3>
-                <p>Название</p><input id="displayName">
-                <p>Юридическое наименование</p><input id="shopName">
-                <p>Город</p><input id="city">
-                <p>Адрес</p><input id="address">
-                <p>Телефон</p><input id="phone">
-                <p><button id="saveProfileButton">Сохранить</button></p>
+            <section class="settings-panel active" id="tab-stats">
+                <h3>Статистика системы</h3>
+                <div id="adminStats"></div>
             </section>
-
-            <section class="settings-panel" id="tab-workers">
-                <h3>Сотрудники</h3>
-                <div class="worker-form">
-                    <input id="workerNameInput" placeholder="Имя сотрудника">
-                    <select id="workerRoleInput">
-                        <option>Владелец</option>
-                        <option>Менеджер</option>
-                        <option selected>Сотрудник</option>
-                    </select>
-                    <input id="workerPhoneInput" placeholder="Телефон">
-                    <input id="workerEmailInput" placeholder="Email">
-                    <button id="addWorkerButton">Добавить</button>
-                </div>
-
-                <div id="workersList"></div>
+            <section class="settings-panel" id="tab-users">
+                <h3>Пользователи</h3>
+                <div id="usersList"></div>
             </section>
-
-            <section class="settings-panel" id="tab-devices">
-                <h3>Устройства</h3>
-
-                <div class="device-form">
-                    <input id="deviceNameInput" placeholder="Например: Телефон">
-                    <button id="addDeviceButton">Добавить</button>
-                </div>
-
-                <div id="devicesList"></div>
+            <section class="settings-panel" id="tab-companies">
+                <h3>Компании</h3>
+                <div id="companiesList"></div>
             </section>
-
-            <section class="settings-panel" id="tab-statuses">
-                <h3>Статусы</h3>
-
-                <div class="status-form">
-                    <input id="statusNameInput" placeholder="Например: В работе">
-                    <button id="addStatusButton">Добавить</button>
+            <section class="settings-panel" id="tab-ai">
+                <h3>Настройки ИИ</h3>
+                <div class="AI-card">
+                    <p>Системный промпт</p>
+                    <textarea
+                        id="aiPromptInput"
+                        placeholder="Например: Отвечай как эксперт по ремонту техники. Пиши кратко, по делу, без Markdown. Сначала указывай возможные причины, затем действия мастера."
+                    ></textarea>
+                    <p>Модель ИИ</p>
+                    <input id="aiModelInput">
+                    <p>
+                        <label>
+                            <input
+                                type="checkbox"
+                                id="aiEnabledInput"
+                                style="width:auto;height:auto;"
+                            >
+                            ИИ включён
+                        </label>
+                    </p>
+                    <button id="saveAiSettingsButton">
+                        Сохранить
+                    </button>
                 </div>
-
-                <div id="statusesList"></div>
+            </section>
+            <section class="settings-panel" id="tab-ai">
+                <p>Искусственный интеллект отправляет данные из заявки.</p>
+                <p>При составлении промпта используйте якоря из списка ниже.</p>
+                <p>Они будут заменены на информацию из заявки:</p>
+                <p>${workers} - Имя исполнителя</p>
+                <p>${device} - Тип устройства</p>
+                <p>${model} - Модель устройства</p>
+                <p>${crush} - Неисправность</p>
+                <p>${note} - Информация из доп. поля</p>
+            </section>
+            <section class="settings-panel" id="tab-system">
+                <h3>Настройки системы</h3>
+                <div class="worker-card">
+                    <label>
+                        <input
+                            type="checkbox"
+                            id="registrationEnabledInput"
+                            style="width:auto;height:auto;"
+                        >
+                        Разрешить регистрацию
+                    </label>
+                    <br><br>
+                    <button id="saveSystemSettingsButton">
+                        Сохранить
+                    </button>
+                </div>
             </section>
         </div>
     </main>
@@ -89,12 +109,12 @@
             <a href="/"><button>Список заказов</button></a>
             <a href="/archive"><button>Архив</button></a>
             <a href="/settings"><button>Настройки</button></a>
-            <a href="/logs"><button>Логи</button></a>
+            <a href="/logs"><button>Журнал действий</button></a>
             <a id="logoutButton"><button>Выход</button></a>
         </div>
     </div>
 </body>
 <script src="js/menu.js"></script>
-<script src="js/settings.js"></script>
+<script src="js/admin.js"></script>
 <script src="js/theme.js"></script>
 </html>

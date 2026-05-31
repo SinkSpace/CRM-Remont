@@ -1,8 +1,5 @@
 const user = JSON.parse(localStorage.getItem('user'));
-
-if (!user) {
-    window.location.href = '/join';
-}
+if (!user) window.location.href = '/start';
 
 document.addEventListener('DOMContentLoaded', () => {
     loadLogs();

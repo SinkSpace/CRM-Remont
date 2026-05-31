@@ -26,7 +26,7 @@ main {
     justify-content: center;
 }
 
-#hm div {
+.log-card {
     width: 80vw;
     display: flex;
     justify-content: space-between;

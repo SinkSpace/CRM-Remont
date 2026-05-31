@@ -45,7 +45,7 @@ header {
     width: 75vw;
 }
 
-#sidebar button, #hm button {
+#sidebar button, .addButton {
     height: 45px;
     width: 10vw;
     font-size: 1em;
@@ -63,7 +63,7 @@ input {
 }
 
 select {
-    width: 10vw;
+    width: 15vw;
     height: 5vh;
 }
 
@@ -85,7 +85,6 @@ select {
 }
 
 .worker-form {
-    gap: 10px;
     align-items: center;
     margin-bottom: 20px;
 }
@@ -97,8 +96,6 @@ select {
 }
 
 .worker-card {
-    display: grid;
-    grid-template-columns: 1.2fr 1fr 1fr 1fr auto auto;
     gap: 10px;
     align-items: center;
     padding: 12px;
@@ -109,6 +106,14 @@ select {
 .worker-card input,
 .worker-card select {
     width: 100%;
+}
+
+.worker-card button {
+    background-color: #333333;
+    color: white;
+    border: 1px solid black;
+    height: 4vh;
+    border-radius: 5px;
 }
 
 .worker-actions {
@@ -122,10 +127,17 @@ select {
 }
 
 .device-form {
-    display: flex;
-    gap: 10px;
     align-items: center;
     margin-bottom: 20px;
+    border-radius: 10px;
+    padding-left: 1vw;
+    padding-right: 1vw;
+    padding-top: 1vh;
+    padding-bottom: 1vh;
+}
+
+.device-form input {
+    width: 22vw !important;
 }
 
 #devicesList {
@@ -150,9 +162,14 @@ select {
     font-size: 16px;
 }
 
-.delete-device-button {
+.delete-device-button, .delete-status-button {
     width: auto !important;
     min-width: 120px;
+    background-color: #333333;
+    color: white;
+    border: 1px solid black;
+    height: 4vh;
+    border-radius: 5px;
 }
 
 .status-form {
@@ -315,6 +332,29 @@ select {
 #filler {
     display: flex;
     gap: 2vw;
+}
+
+.day {
+    background-color: #333333;
+    color: white;
+    border: 1px solid black;
+    width: 5vw;
+    height: 5vh;
+    border-radius: 10px;
+}
+
+.day.active {
+    background-color: #2C97F2;
+    border: 2px solid #66b7ff;
+}
+
+#dayDiv {
+    display: flex;
+    gap: 10px;
+}
+
+#timeDiv input {
+    width: 7vw;
 }
 
 @media (max-width: 1100px) {

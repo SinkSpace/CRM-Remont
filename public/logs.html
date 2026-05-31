@@ -3,27 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <link rel="stylesheet" href="css/track.css">
     <link rel="stylesheet" href="css/uni.css">
     <link rel="stylesheet" href="css/mobile.css">
     <link rel="stylesheet" href="css/dark.css">
-    <title>CRM</title>
+    <title>Журнал действий</title>
 </head>
 <body>
     <nav class="parent">
         <div class="parent" id="headName">
-            <img alt="Меню" src="menu.svg" id="menu">
-            <h1>CRM</h1>
+            <img alt="Меню" src="menu.svg" id="menu" style="display: none;">
+            <h1>Система</h1>
         </div>
         <div id="nameShop">
-            <span id="userName"></span>
-            <span id="userEmail"></span>
+            <p id="userName"></p>
+            <a href="/"><img alt="Главная" src="svg/shop.svg" id="main"></a>
+            <a href="/statistic"><img alt="Статистика" src="svg/statistics.svg" id="stat"></a>
+            <a href="/logs"><img alt="Журнал действий" src="svg/file.svg" id="logs"></a>
+            <a href="/settings"><img alt="Настройки" src="svg/settings.svg" id="sett"></a>
+            <img alt="Выход" src="svg/export.svg" id="logoutButton">
         </div>
     </nav>
     <header class="parent">
         <p style="visibility: hidden;">a</p>
-        <h2>Логи</h2>
+        <h2>Журнал действий</h2>
         <p style="visibility: hidden;">a</p>
     </header>
     <main>
@@ -36,12 +39,12 @@
             <a href="/"><button>Список заказов</button></a>
             <a href="/archive"><button>Архив</button></a>
             <a href="/settings"><button>Настройки</button></a>
-            <a href="/logs"><button>Логи</button></a>
+            <a href="/logs"><button>Журнал действий</button></a>
             <a id="logoutButton"><button>Выход</button></a>
         </div>
     </div>
 </body>
+<script src="js/theme.js"></script>
 <script src="js/logs.js"></script>
 <script src="js/menu.js"></script>
-<script src="js/theme.js"></script>
 </html>

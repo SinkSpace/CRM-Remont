@@ -36,7 +36,7 @@ const priceCalcBox = document.getElementById('priceCalcBox');
 
 /* 0. Получение данных о пользователе */
 const user = JSON.parse(localStorage.getItem('user'));
-if (!user) window.location.href = '/join'; //перенаправить на страницу входа, если пользователя не существует
+if (!user) window.location.href = '/start'; //перенаправить на страницу входа, если пользователя не существует
 
 /* 1. Загрузка списка */
 document.addEventListener('DOMContentLoaded', () => {
@@ -356,7 +356,7 @@ async function generateDocument(orderId) {
 
 /* 1.1.1.4: Архивирование заказа */ 
 function archiveTask(id) {
-    if (!confirm('Отправить заказ в архив?')) return;
+    if (!confirm('Выдать заказ?')) return;
 
     fetch(`/api/orders/${id}/archive`, {
         method: 'PUT',
@@ -744,27 +744,46 @@ function sortTasks(field, visual) {
 
 /* 10.1 Вопрос к ИИ */
 function questAI(id) {
-    console.log(id);
     const task = tasks.find(t => t.id === id);
+    if (!task) return;
 
-    send(task.worker, task.device, task.model, task.crush, task.note);
+    send(task);
 }
 
-async function send(worker, device, model, crush, note) {
-  const message = `Инженер ${worker} запрашивает советы по починке техники. Устройство: ${device}, Модель: ${model}, Неисправность: ${crush}, Дополнительная информация: ${note}. Ответьте как консультант по ремонту бытовой техники, не используя Markdown разметку (кроме списков)`;
-  const out = document.getElementById("out");
+function replaceAiTags(prompt, task) {
+    return prompt
+        .replaceAll('${worker}', task.worker || '')
+        .replaceAll('${device}', task.device || '')
+        .replaceAll('${model}', task.model || '')
+        .replaceAll('${crush}', task.crush || '')
+        .replaceAll('${note}', task.note || '');
+}
 
-  out.textContent = "⏳ думает...";
+async function send(task) {
+    const out = document.getElementById("out");
+    out.style.whiteSpace = "pre-wrap";
+    out.textContent = "⏳ думает...";
 
-  const res = await fetch("/chat", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ message }),
-  });
+    const settingsRes = await fetch(`/api/admin/dashboard?admin_id=${user.id}`);
+    const settingsData = await settingsRes.json();
 
-  const data = await res.json();
+    if (!settingsRes.ok) {
+        out.textContent = settingsData.error || 'Ошибка загрузки настроек ИИ';
+        return;
+    }
 
-  out.textContent = data.text || JSON.stringify(data, null, 2);
+    const prompt = settingsData.settings?.ai_prompt || '';
+    const message = replaceAiTags(prompt, task);
+
+    const res = await fetch("/chat", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ message }),
+    });
+
+    const data = await res.json();
+
+    out.textContent = data.text || JSON.stringify(data, null, 2);
 }

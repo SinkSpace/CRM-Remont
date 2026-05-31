@@ -14,20 +14,22 @@ const logoutButton = document.getElementById('logoutButton');
 
 if (logoutButton) {
     logoutButton.addEventListener('click', () => {
-        localStorage.removeItem('user');
-        window.location.href = '/join';
+        if (confirm('Вы действительно хотите выйти?')) {
+            localStorage.removeItem('user');
+            window.location.href = '/start';
+        }
     });
 }
 
 const userJoin = JSON.parse(localStorage.getItem('user'));
 
-const emailElement = document.getElementById('userEmail');
+/* const emailElement = document.getElementById('userEmail'); */
 const userElement = document.getElementById('userName');
 
 if (userJoin) {
-    if (emailElement) {
+    /*if (emailElement) {
         emailElement.textContent = userJoin.email || '';
-    }
+    }*/
 
     if (userElement) {
         userElement.textContent = userJoin.shop_name || userJoin.display_name || '';
@@ -45,4 +47,18 @@ if (menuWindow && userJoin && userJoin.role === 'admin') {
 
     adminLink.appendChild(adminButton);
     menuWindow.appendChild(adminLink);
+}
+
+const headName = document.getElementById('headName');
+
+if (headName && userJoin && userJoin.role === 'admin') {
+    const adminLink = document.createElement('a');
+    adminLink.href = '/admin';
+
+    const adminButton = document.createElement('button');
+    adminButton.textContent = 'Админ';
+    adminButton.className = 'admin-head-button';
+
+    adminLink.appendChild(adminButton);
+    headName.appendChild(adminLink);
 }

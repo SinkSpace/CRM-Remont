@@ -1,0 +1,71 @@
+#headName {
+    display: flex;
+    justify-content: space-between;
+    width: 95vw;
+}
+
+.end-nav {
+    gap: 1vw;
+}
+
+button {
+    height: 40px;
+    font-size: 1em;
+    padding-left: 20px;
+    padding-right: 20px;
+    background-color: #2C97F2;
+    border: none;
+    color: white;
+    border-radius: 10px;
+}
+
+.hero {
+    display: flex;
+    justify-content: center; /* по горизонтали */
+    align-items: center; /* по вертикали */
+    height: 50vh;
+}
+
+.hero section div {
+    display: flex;
+    justify-content: center; /* по горизонтали */
+}
+
+.hero-buttons {
+    margin-top: 3vh;
+    gap: 1vw;
+}
+
+.features h2 {
+    text-align: center;
+    margin-top: 3vw;
+    margin-bottom: 2vw;
+}
+
+.features-grid {
+    display: flex;
+    justify-content: space-between;
+    margin-left: 5vw;
+    margin-right: 5vw;
+}
+
+.feature-card {
+    width: 20vw;
+    padding-left: 1vw;
+    padding-right: 1vw;
+    padding-top: 1vh;
+    padding-bottom: 1vh;
+    background-color: rgb(142, 255, 255);
+    border-radius: 20px;
+    text-align: center;
+    margin-bottom: 2vw;
+}
+
+footer {
+    justify-content: center;
+    color: white;
+    background-color: #333333;
+    height: 3vw;
+    display: flex;
+    align-items: center; /* по вертикали */
+}

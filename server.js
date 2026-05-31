@@ -45,6 +45,12 @@ const DEFAULT_STATUSES = [
     'Отменён'
 ];
 
+const DEFAULT_WORKER = [
+    'Админ',
+    'Менеджер',
+    'Сотрудник'
+]
+
 /******** СОЗДАНИЕ ПАПОК *********/
 fs.mkdirSync(templatesDir, { recursive: true });
 fs.mkdirSync(generatedDir, { recursive: true });
@@ -83,8 +89,12 @@ app.get('/archive', (req, res) => { //Архив
     res.sendFile(path.join(__dirname, 'public', 'archive.html'))
 })
 
-app.get('/ai', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'ai.html'))
+app.get('/start', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'start.html'))
+})
+
+app.get('/statistic', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'statistic.html'))
 })
 
 /******** ЗАКАЗЫ *********/
@@ -372,51 +382,6 @@ app.put('/orders/:id', async (req, res) => {
     }
 });
 
-/* 1.3 Удаление заказа */
-app.delete('/orders/:id', async (req, res) => {
-    try {
-        const id = Number(req.params.id);
-        const company_id = Number(req.query.company_id || req.body.company_id);
-
-        if (!company_id) {
-            return res.status(400).json({ error: 'company_id required' });
-        }
-
-        const beforeResult = await pool.query(
-            `SELECT id, customer, worker, model, status, price
-             FROM orders
-             WHERE id = $1 AND company_id = $2`,
-            [id, company_id]
-        );
-
-        const before = beforeResult.rows[0];
-
-        if (!before) {
-            return res.status(404).json({ error: 'Заказ не найден' });
-        }
-
-        await pool.query(
-            'DELETE FROM orders WHERE id = $1 AND company_id = $2',
-            [id, company_id]
-        );
-
-        await writeLog({
-            company_id,
-            user_id: null,
-            entity_type: 'order',
-            entity_id: id,
-            action: 'delete',
-            title: `Удалён заказ №${id}`,
-            details: before
-        });
-
-        res.json({ message: 'Заказ удалён' });
-    } catch (error) {
-        console.error('Ошибка при удалении заказа:', error);
-        res.status(500).json({ error: 'Ошибка сервера' });
-    }
-});
-
 /* 1.4 Архивация */
 app.put('/api/orders/:id/archive', async (req, res) => {
     try {
@@ -562,6 +527,15 @@ app.put('/api/orders/:id/unarchive', async (req, res) => {
 /* 2. Регистрация */
 app.post('/api/register', async (req, res) => {
     const client = await pool.connect();
+
+    const settingsResult = await client.query(
+        'SELECT registration_enabled FROM system_settings WHERE id = 1'
+    );
+
+    if (settingsResult.rows[0]?.registration_enabled === false) {
+        await client.query('ROLLBACK');
+        return res.status(403).json({ error: 'Регистрация временно отключена' });
+    }
 
     try {
         await client.query('BEGIN');
@@ -721,9 +695,13 @@ app.get('/api/profile/:id', async (req, res) => {
                 p.city,
                 p.address,
                 p.phone,
-                p.avatar_url
+                p.avatar_url,
+                c.work_days,
+                c.work_time_start,
+                c.work_time_end
             FROM users u
             LEFT JOIN user_profiles p ON p.user_id = u.id
+            LEFT JOIN companies c ON c.id = u.company_id
             WHERE u.id = $1`,
             [userId]
         );
@@ -746,7 +724,16 @@ app.get('/api/profile/:id', async (req, res) => {
 app.put('/api/profile/:id', async (req, res) => {
     try {
         const userId = Number(req.params.id);
-        const { display_name, shop_name, city, address, phone } = req.body;
+        const {
+            display_name,
+            shop_name,
+            city,
+            address,
+            phone,
+            work_days,
+            work_time_start,
+            work_time_end
+        } = req.body;
 
         if (!display_name) {
             return res.status(400).json({
@@ -790,6 +777,20 @@ app.put('/api/profile/:id', async (req, res) => {
                 address || null,
                 phone || null,
                 userId
+            ]
+        );
+
+        await pool.query(
+            `UPDATE companies
+            SET work_days = $1::jsonb,
+                work_time_start = $2,
+                work_time_end = $3
+            WHERE id = $4`,
+            [
+                JSON.stringify(Array.isArray(work_days) ? work_days : []),
+                work_time_start || null,
+                work_time_end || null,
+                company_id
             ]
         );
 
@@ -1224,7 +1225,7 @@ app.get('/api/logs/:companyId', async (req, res) => {
 
 app.post('/api/templates/upload', uploadTemplate.single('template'), async (req, res) => {
     try {
-        const { company_id, user_id, name } = req.body;
+        const { company_id, user_id, name, type } = req.body;
         const originalName = Buffer.from(req.file.originalname, 'latin1').toString('utf8');
 
         if (!company_id || !name || !req.file) {
@@ -1232,10 +1233,10 @@ app.post('/api/templates/upload', uploadTemplate.single('template'), async (req,
         }
 
         const result = await pool.query(
-            `INSERT INTO document_templates (company_id, user_id, name, file_path, original_name)
-             VALUES ($1, $2, $3, $4, $5)
+            `INSERT INTO document_templates (company_id, user_id, name, file_path, original_name, type)
+             VALUES ($1, $2, $3, $4, $5, $6)
              RETURNING *`,
-            [company_id, user_id || null, name.trim(), req.file.path, originalName]
+            [company_id, user_id || null, name.trim(), req.file.path, originalName, type || 'act']
         );
 
         res.status(201).json(result.rows[0]);
@@ -1248,11 +1249,91 @@ app.post('/api/templates/upload', uploadTemplate.single('template'), async (req,
 app.get('/api/templates/:companyId', async (req, res) => {
     try {
         const companyId = Number(req.params.companyId);
+        const type = req.query.type || null;
+
+        const result = await pool.query(
+            `SELECT id, company_id, user_id, name, original_name, type, created_at
+             FROM document_templates
+             WHERE company_id = $1
+               AND ($2::text IS NULL OR type = $2)
+             ORDER BY id DESC`,
+            [companyId, type]
+        );
+
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Ошибка загрузки шаблонов:', error);
+        res.status(500).json({ error: 'Ошибка сервера' });
+    }
+});
+
+/* 9.2 Удаление */
+
+app.delete('/api/templates/:id', async (req, res) => {
+    try {
+        const id = Number(req.params.id);
+        const { company_id } = req.body;
+
+        const result = await pool.query(
+            `DELETE FROM document_templates
+             WHERE id = $1 AND company_id = $2
+             RETURNING *`,
+            [id, company_id]
+        );
+
+        if (!result.rows[0]) {
+            return res.status(404).json({ error: 'Шаблон не найден' });
+        }
+
+        const filePath = result.rows[0].file_path;
+        if (filePath && fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath);
+        }
+
+        res.json({ message: 'Шаблон удалён' });
+    } catch (error) {
+        console.error('Ошибка удаления шаблона:', error);
+        res.status(500).json({ error: 'Ошибка сервера' });
+    }
+});
+
+/******** ШАБЛОНЫ ДОКУМЕНТОВ *********/
+
+/* 9.1 Получение */
+
+app.post('/api/templates/upload', uploadTemplate.single('template'), async (req, res) => {
+    try {
+        const { company_id, user_id, name, type } = req.body;
+        const originalName = Buffer.from(req.file.originalname, 'latin1').toString('utf8');
+
+        if (!company_id || !name || !req.file) {
+            return res.status(400).json({ error: 'company_id, name и template обязательны' });
+        }
+
+        const result = await pool.query(
+            `INSERT INTO document_templates (company_id, user_id, name, file_path, original_name, type)
+             VALUES ($1, $2, $3, $4, $5, $6)
+             RETURNING *`,
+            [company_id, user_id || null, name.trim(), req.file.path, originalName, type || 'act']
+        );
+
+        res.status(201).json(result.rows[0]);
+    } catch (error) {
+        console.error('Ошибка загрузки шаблона:', error);
+        res.status(500).json({ error: 'Ошибка сервера' });
+    }
+});
+
+app.get('/api/templates/:companyId', async (req, res) => {
+    try {
+        const companyId = Number(req.params.companyId);
+        const { type } = req.query;
 
         const result = await pool.query(
             `SELECT id, company_id, user_id, name, original_name, created_at
              FROM document_templates
              WHERE company_id = $1
+             AND ($2::text is NULL OR type = $2)
              ORDER BY id DESC`,
             [companyId]
         );
@@ -1292,6 +1373,127 @@ app.delete('/api/templates/:id', async (req, res) => {
         console.error('Ошибка удаления шаблона:', error);
         res.status(500).json({ error: 'Ошибка сервера' });
     }
+});
+
+/* 10.1 Статистика */
+
+app.get('/stats', async (req, res) => {
+    const { type, date, company_id } = req.query;
+
+    if (!company_id) {
+        return res.status(400).json({ error: 'company_id required' });
+    }
+
+    try {
+        let result;
+
+        if (type === 'day') {
+            result = await pool.query(`
+                SELECT COALESCE(SUM(price), 0) AS income
+                FROM orders
+                WHERE company_id = $1
+                  AND DATE(created_at) = $2
+            `, [company_id, date]);
+        }
+
+        if (type === 'month') {
+            result = await pool.query(`
+                SELECT COALESCE(SUM(price), 0) AS income
+                FROM orders
+                WHERE company_id = $1
+                  AND DATE_TRUNC('month', created_at) = DATE_TRUNC('month', $2::date)
+            `, [company_id, date]);
+        }
+
+        res.json(result.rows[0]);
+    } catch (err) {
+        console.log(err);
+        res.status(500).send('Ошибка сервера');
+    }
+});
+
+app.get('/stats/workers/day', async (req, res) => {
+    const { date, company_id } = req.query;
+
+    if (!company_id) {
+        return res.status(400).json({ error: 'company_id required' });
+    }
+
+    const result = await pool.query(`
+        SELECT 
+            COALESCE(worker, 'Без сотрудника') AS name,
+            COALESCE(SUM(price), 0) AS income,
+            COUNT(*) AS orders_count
+        FROM orders
+        WHERE company_id = $1
+          AND DATE(created_at) = $2
+        GROUP BY worker
+        ORDER BY income DESC
+    `, [company_id, date]);
+
+    res.json(result.rows);
+});
+
+app.get('/stats/workers/month', async (req, res) => {
+    const { date, company_id } = req.query;
+
+    if (!company_id) {
+        return res.status(400).json({ error: 'company_id required' });
+    }
+
+    const result = await pool.query(`
+        SELECT 
+            COALESCE(worker, 'Без сотрудника') AS name,
+            COALESCE(SUM(price), 0) AS income,
+            COUNT(*) AS orders_count
+        FROM orders
+        WHERE company_id = $1
+          AND DATE_TRUNC('month', created_at) = DATE_TRUNC('month', $2::date)
+        GROUP BY worker
+        ORDER BY income DESC
+    `, [company_id, date]);
+
+    res.json(result.rows);
+});
+
+/* 10.2 Статистика конкретного работника за день */
+
+app.get('/stats/workers/day', async (req, res) => {
+
+    const date = req.query.date;
+
+    const result = await pool.query(`
+        SELECT 
+            worker,
+            SUM(price) AS income,
+            COUNT(*) AS orders_count
+        FROM orders
+        WHERE DATE(created_at) = $1
+        GROUP BY worker
+        ORDER BY income DESC
+    `, [date]);
+
+    res.json(result.rows);
+});
+
+/* 10.3 Статистика конкретного работника за месяц */
+
+app.get('/stats/workers/month', async (req, res) => {
+
+    const date = req.query.date;
+
+    const result = await pool.query(`
+        SELECT 
+            worker,
+            SUM(price) AS income,
+            COUNT(*) AS orders_count
+        FROM orders
+        WHERE DATE_TRUNC('month', created_at) = DATE_TRUNC('month', $1::date)
+        GROUP BY worker
+        ORDER BY income DESC
+    `, [date]);
+
+    res.json(result.rows);
 });
 
 /******** ГЕНЕРАЦИЯ ДОКУМЕНТОВ *********/
@@ -1420,27 +1622,39 @@ async function getToken() {
 }
 
 async function chat(token, message) {
-  const res = await axios({
-    method: "post",
-    url: CHAT_URL,
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    data: {
-      model: "GigaChat-2",
-      messages: [
-        {
-          role: "user",
-          content: message,
-        },
-      ],
-      profanity_check: true,
-    },
-  });
+    const settingsResult = await pool.query(
+        'SELECT ai_prompt, ai_model, ai_enabled FROM system_settings WHERE id = 1'
+    );
 
-  return res.data;
+    const settings = settingsResult.rows[0] || {};
+
+    if (settings.ai_enabled === false) {
+        throw new Error('ИИ отключён администратором');
+    }
+
+    const finalPrompt = `${settings.ai_prompt || ''}\n\nЗапрос пользователя:\n${message}`;
+
+    const res = await axios({
+        method: 'post',
+        url: CHAT_URL,
+        headers: {
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+            Authorization: `Bearer ${token}`,
+        },
+        data: {
+            model: settings.ai_model || 'GigaChat-2',
+            messages: [
+                {
+                    role: 'user',
+                    content: finalPrompt,
+                },
+            ],
+            profanity_check: true,
+        },
+    });
+
+    return res.data;
 }
 
 app.post("/chat", async (req, res) => {
@@ -1606,6 +1820,36 @@ async function ensureDefaultStatuses(company_id, user_id = null) {
             [user_id, company_id, name]
         );
     }
+
+    await pool.query(
+        'INSERT INTO workers (user_id, company_id, name, role, phone, email) VALUES ($1, $2, $3, $4, $5, $6)',
+            [1,
+            company_id,
+            'Админ',
+            'Администратор',
+            '',
+            '']
+    );
+
+    await pool.query(
+        'INSERT INTO workers (user_id, company_id, name, role, phone, email) VALUES ($1, $2, $3, $4, $5, $6)',
+            [2,
+            company_id,
+            'Менеджер',
+            'Менеджер',
+            '',
+            '']
+    );
+
+    await pool.query(
+        'INSERT INTO workers (user_id, company_id, name, role, phone, email) VALUES ($1, $2, $3, $4, $5, $6)',
+            [3,
+            company_id,
+            'Сотрудник',
+            'Сотрудник',
+            '',
+            '']
+    );
 }
 
 /* generateBarcodeBase64 */
@@ -1684,6 +1928,156 @@ async function buildTemplateData(company_id, order_id) {
         Примечание: order.note || ''
     };
 }
+
+async function isAdmin(admin_id) {
+    const result = await pool.query(
+        'SELECT id FROM users WHERE id = $1 AND role = $2 AND is_active = true',
+        [admin_id, 'admin']
+    );
+
+    return result.rows.length > 0;
+}
+
+async function checkSiteAdmin(adminId) {
+    const result = await pool.query(
+        `SELECT id, email, role
+         FROM users
+         WHERE id = $1 AND role = 'admin' AND is_active = true`,
+        [adminId]
+    );
+
+    return result.rows[0];
+}
+
+app.put('/api/admin/users/:id/active', async (req, res) => {
+    try {
+        const adminId = Number(req.body.admin_id);
+        const targetUserId = Number(req.params.id);
+        const isActive = Boolean(req.body.is_active);
+
+        const admin = await checkSiteAdmin(adminId);
+
+        if (!admin) {
+            return res.status(403).json({ error: 'Доступ запрещён' });
+        }
+
+        if (adminId === targetUserId) {
+            return res.status(400).json({ error: 'Нельзя отключить самого себя' });
+        }
+
+        const result = await pool.query(
+            `UPDATE users
+             SET is_active = $1
+             WHERE id = $2
+             RETURNING id, email, role, is_active`,
+            [isActive, targetUserId]
+        );
+
+        if (!result.rows[0]) {
+            return res.status(404).json({ error: 'Пользователь не найден' });
+        }
+
+        res.json(result.rows[0]);
+    } catch (error) {
+        console.error('Ошибка изменения пользователя:', error);
+        res.status(500).json({ error: 'Ошибка сервера' });
+    }
+});
+
+app.get('/api/admin/dashboard', async (req, res) => {
+    try {
+        const adminId = Number(req.query.admin_id);
+
+        if (!await isAdmin(adminId)) {
+            return res.status(403).json({ error: 'Доступ запрещён' });
+        }
+
+        const statsResult = await pool.query(`
+            SELECT
+                (SELECT COUNT(*) FROM companies) AS companies_count,
+                (SELECT COUNT(*) FROM users) AS users_count,
+                (SELECT COUNT(*) FROM orders) AS orders_count,
+                (SELECT COUNT(*) FROM generated_documents) AS documents_count
+        `);
+
+        const companiesResult = await pool.query(`
+            SELECT
+                c.id,
+                c.name,
+                u.email AS owner_email,
+                COUNT(all_users.id) AS users_count
+            FROM companies c
+            LEFT JOIN users u ON u.id = c.owner_user_id
+            LEFT JOIN users all_users ON all_users.company_id = c.id
+            GROUP BY c.id, c.name, u.email
+            ORDER BY c.id DESC
+        `);
+
+        const usersResult = await pool.query(`
+            SELECT
+                u.id,
+                u.email,
+                u.role,
+                u.is_active,
+                u.company_id,
+                p.display_name
+            FROM users u
+            LEFT JOIN user_profiles p ON p.user_id = u.id
+            ORDER BY u.id DESC
+        `);
+
+        const settingsResult = await pool.query(
+            'SELECT * FROM system_settings WHERE id = 1'
+        );
+
+        res.json({
+            stats: statsResult.rows[0],
+            companies: companiesResult.rows,
+            users: usersResult.rows,
+            settings: settingsResult.rows[0] || {}
+        });
+    } catch (error) {
+        console.error('Ошибка админ-панели:', error);
+        res.status(500).json({ error: 'Ошибка сервера' });
+    }
+});
+
+app.put('/api/admin/settings', async (req, res) => {
+    try {
+        const {
+            admin_id,
+            ai_prompt,
+            ai_model,
+            ai_enabled,
+            registration_enabled
+        } = req.body;
+
+        if (!await isAdmin(Number(admin_id))) {
+            return res.status(403).json({ error: 'Доступ запрещён' });
+        }
+
+        const result = await pool.query(`
+            UPDATE system_settings
+            SET ai_prompt = $1,
+                ai_model = $2,
+                ai_enabled = $3,
+                registration_enabled = $4,
+                updated_at = NOW()
+            WHERE id = 1
+            RETURNING *
+        `, [
+            ai_prompt,
+            ai_model || 'GigaChat-2',
+            Boolean(ai_enabled),
+            Boolean(registration_enabled)
+        ]);
+
+        res.json(result.rows[0]);
+    } catch (error) {
+        console.error('Ошибка сохранения настроек:', error);
+        res.status(500).json({ error: 'Ошибка сервера' });
+    }
+});
 
 /******** ЗАПУСК СЕРВЕРА *********/
 app.listen(3000, () => {

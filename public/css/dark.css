@@ -1,5 +1,5 @@
 [data-theme="dark"] body {
-    background-color: #333333;
+    background-color: black;
     color: white;
 }
 
@@ -8,15 +8,32 @@
 }
 
 [data-theme="dark"] select, [data-theme="dark"] option {
-    background-color: #333333;
+    background-color: black;
     color: white;
     border: 0px;
+}
+
+[data-theme="dark"] #headName, [dark-theme="dark"] h1 {
+    color: white;
+}
+
+[data-theme="dark"] #nameShop, [dark-theme="dark"] span {
+    color: white;
+}
+
+[data-theme="dark"] #filter {
+    background-color: white;
+    color: black;
+}
+
+[data-theme="dark"] #headName {
+    color: white;
 }
 
 /* модальное окно */
 
 [data-theme="dark"] #modal-window {
-    background-color: #333333;
+    background-color: rgb(60, 60, 60);
     color: white;
 }
 
@@ -50,16 +67,16 @@
 
 /* логи */ 
 
-[data-theme="dark"] #logsList{
-    background-color: #575656;
+[data-theme="dark"] #logsList {
+    background-color: black;
 }
 
 [data-theme="dark"] .log-card {
     background-color: #575656;
 }
 
-[data-theme="dark"] pre {
-    background-color: #555555;
+[data-theme="dark"] .log-card pre {
+    background-color: #7b7b7b;
 }
 
 /* авторизация */
@@ -68,10 +85,16 @@
     background-color: #555555;
 }
 
+/* старт */
+
+[data-theme="dark"] .feature-card {
+    color: black;
+}
+
 /* модальное меню */
 
 [data-theme="dark"] #menu-window {
-    background-color: #333333;
+    background-color: rgb(60, 60, 60);
 }
 
 [data-theme="dark"] #menu-window button {

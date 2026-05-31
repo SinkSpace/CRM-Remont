@@ -1,0 +1,23 @@
+main {
+    display: flex;
+    justify-content: center;
+    gap: 100px;
+}
+
+main section {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+}
+
+main section button {
+    height: 30px;
+}
+
+.workers
+{
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+}

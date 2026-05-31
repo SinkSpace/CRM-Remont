@@ -19,9 +19,13 @@ nav {
     justify-content: space-between;
     padding-left: 20px;
     padding-right: 20px;
-    background-color: #333333;
-    color: white;
+    color: black;
     height: 70px;
+}
+
+nav span {
+    margin-left: 5px;
+    margin-right: 5px;
 }
 
 nav div {
@@ -39,8 +43,8 @@ nav h1 {
 }
 
 nav img {
-    height: 30px;
-    width: 30px;
+    height: 50px;
+    width: 50px;
     padding-right: 10px;
 }
 
@@ -77,4 +81,20 @@ nav img {
     width: 20vw;
     font-size: 1.1em;
     border: none;
+}
+
+.admin-head-button {
+    margin-left: 15px;
+    height: 36px;
+    padding: 0 14px;
+    border: none;
+    border-radius: 10px;
+    background: #2C97F2;
+    color: white;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.admin-head-button:hover {
+    opacity: 0.85;
 }
