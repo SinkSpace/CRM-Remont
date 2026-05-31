@@ -2080,6 +2080,10 @@ app.put('/api/admin/settings', async (req, res) => {
 });
 
 /******** ЗАПУСК СЕРВЕРА *********/
-app.listen(3000, () => {
+
+const PORT = '3000';
+const HOST = '0.0.0.0';
+
+app.listen(PORT, HOST, () => {
     console.log('3000');
 });
