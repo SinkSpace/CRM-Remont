@@ -7,23 +7,26 @@
     <link rel="stylesheet" href="css/uni.css">
     <link rel="stylesheet" href="css/mobile.css">
     <link rel="stylesheet" href="css/dark.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,200..1000;1,200..1000&display=swap" rel="stylesheet">
     <title>Войти</title>
 </head>
 <body>
     <nav class="parent">
         <div class="parent" id="headName">
-            <h1>Система</h1>
+            <h1>CRM-Sink</h1>
         </div>
+        <a href="/register"><button>Регистрация</button></a>
     </nav>
     <main>
-        <div>
+        <div id="jojoin">
             <h1>Вход</h1>
             <p>Электронная почта</p>
             <input type="email" id="email">
             <p>Пароль</p>
             <input type="password" id="password">
-            <p><button>Войти</button>
-            <a href="/register"><button>Регистрация</button></a></p>
+            <p><button id="join">Войти</button></p>
         </div>
     </main>
 </body>

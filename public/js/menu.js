@@ -57,3 +57,14 @@ if (headName && userJoin && userJoin.role === 'admin') {
     adminLink.appendChild(adminButton);
     headName.appendChild(adminLink);
 }
+
+window.escapeHtml = function (value) {
+    return String(value)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+};
+
+window.escapeHTML = window.escapeHtml;

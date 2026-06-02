@@ -105,7 +105,6 @@ main {
     border: 0px;
     color: white;
     border-radius: 5px;
-    width: 2.5vw;
     margin-right: 1vw;
 }
 
@@ -119,9 +118,13 @@ main {
         28.385vw
         5.781vw
         8.385vw
-        6.25vw
-        8.469vw
-        6.844vw;
+        8.25vw
+        10.469vw;
+}
+
+#orderTable {
+    background-color: white;
+    border-radius: 10px 10px 0px 0px;
 }
 
 /* Модальное окно */

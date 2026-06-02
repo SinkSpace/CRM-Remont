@@ -2085,5 +2085,5 @@ const PORT = '80';
 const HOST = '0.0.0.0';
 
 app.listen(PORT, HOST, () => {
-    console.log('Сервер запущен, домен crmsink.ru ($1:$2)', [HOST, PORT]);
+    console.log('Сервер запущен, домен http://crmsink.ru');
 });

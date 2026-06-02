@@ -124,15 +124,6 @@ function formattedDateTime(dateValue) {
     return date.toLocaleString('ru-RU');
 }
 
-function escapeHtml(value) {
-    return String(value)
-        .replaceAll('&', '&amp;')
-        .replaceAll('<', '&lt;')
-        .replaceAll('>', '&gt;')
-        .replaceAll('"', '&quot;')
-        .replaceAll("'", '&#039;');
-}
-
 async function warrantyTask(orderId) {
     try {
         const responseTemplates = await fetch(`/api/templates/${user.company_id}?type=warranty`);

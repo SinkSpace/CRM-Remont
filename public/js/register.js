@@ -1,4 +1,4 @@
-const registerButton = document.querySelector('button');
+const registerButton = document.getElementById('reg');
 const nameInput = document.getElementById('nameCRM');
 const emailInput = document.getElementById('email');
 const passwordInput = document.getElementById('password');

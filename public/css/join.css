@@ -6,11 +6,25 @@ h1 {
 main {
     display: flex;
     justify-content: center;
+    background-image: url('../img/join.jpg');
+    height: 91vh;
+    align-items: center;
+}
+
+main div {
+    padding-left: 3vw;
+    padding-right: 3vw;
+    padding-top: 5vh;
+    padding-bottom: 5vh;
+    background-color: rgba(255, 255, 255, 0.8);
+    border-radius: 25px;
 }
 
 main input {
     width: 30vw;
     height: 5vh;
+    border-radius: 5px;
+    border: 1px solid black;
 }
 
 button {

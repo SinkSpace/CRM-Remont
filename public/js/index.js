@@ -240,10 +240,9 @@ function renderTasks() {
         <div class="tdBug">${returnHTML(task.crush)}</div>
         <div class="tdPrice">${task.price}</div>
         <div class="tdWorker">${returnHTML(task.worker)}</div>
-        <div class="tdBegin">${formattedDate(task.acceptDate)}</div>
         <div class="days-cell">${daysLeft} дн.</div>
         <div class="tdEdit">
-            <button onclick="editTask(${task.id})">+</button> 
+            <button onclick="editTask(${task.id})">Редактировать</button> 
         </div>
         `;
 

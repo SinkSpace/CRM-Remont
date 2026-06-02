@@ -1,153 +1,24 @@
-@media (max-width: 1400px) { 
-    .days-cell, #dateHead {
-        display: none;
-    }
+/* Большие ноутбуки */
+@media (max-width: 1440px) {
 
-    #mainHead, .mainTable {
-        display: grid;
-        grid-template-columns:
-        3vw
-        25.182vw
-        10.124vw
-        29.762vw
-        6.913vw
-        9.545vw
-        7.387vw
-        7.987vw;
-    }
-
-}  
-
-@media (max-width: 1200px) {
-    .tdEdit button {
-        font-size: 12px;
-    }
-
-    .tdStatus, #statusHead {
-        display: none;
-    }
-
-    #mainHead, .mainTable {
-        display: grid;
-        grid-template-columns:
-        3vw
-        28.118vw
-        33.234vw
-        7.719vw
-        10.658vw
-        8.248vw
-        8.918vw;
-    }
 }
 
-@media (max-width: 1150px) {
-    #nameShop p {
-        display: none;
-    }
+/* Планшеты */
+@media (max-width: 1024px) {
+
 }
 
-@media (max-width: 1000px) {
-    .tdEdit button {
-        font-size: 9px;
-    }
+/* Маленькие планшеты */
+@media (max-width: 768px) {
 
-    #workerHead, .tdWorker {
-        display: none;
-    }
-
-    #mainHead, .mainTable {
-        display: grid;
-
-        grid-template-columns:
-        3vw
-        31.633vw
-        37.384vw
-        8.683vw
-        9.277vw
-        10.032vw;
-    }
 }
 
-@media (max-width: 900px) {
-    #editHead {
-        visibility: hidden;
-    }
+/* Телефоны */
+@media (max-width: 480px) {
+
 }
 
-@media (max-width: 850px) {
-    #priceHead, .tdPrice {
-        display: none;
-    }
+/* Очень маленькие телефоны */
+@media (max-width: 360px) {
 
-    #mainHead, .mainTable {
-        display: grid;
-
-        grid-template-columns:
-        3vw
-        34.739vw
-        41.055vw
-        10.188vw
-        11.017vw;
-    }
-}
-
-@media (max-width: 750px) {
-    #bugHead, .tdBug {
-        display: none;
-    }
-
-    #mainHead, .mainTable {
-        display: grid;
-
-        grid-template-columns:
-        3vw
-        62.09vw
-        18.21vw
-        19.69vw;
-    }
-}
-
-@media (max-width: 450px) {
-    #headName {
-        display: none;
-    }
-
-    header h2 {
-        display: none;
-    }
-
-    #addOrder {
-        font-size: 11px;
-    }
-
-    #dateBeginHead, .tdBegin {
-        display: none;
-    }
-
-    #mainHead, .mainTable {
-        display: grid;
-
-        grid-template-columns:
-        3vw
-        73.645vw
-        23.355vw;
-    }
-
-    #modelHead, .tdModel {
-        border-left: none !important;
-    }
-
-    #modal-window {
-        width: 100vw;
-        height: 100vh;
-    }
-
-    #modal-window input, select, nav input {
-        height: 35px;
-        width: 70vw;
-    }
-
-    #deviceInput, #modelInput, #dateInput, #deadline {
-        width: 30vw !important;
-    }
 }

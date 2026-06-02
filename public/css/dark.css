@@ -34,6 +34,10 @@
     color: white;
 } 
 
+[data-theme="dark"] #orderTable {
+    background-color: black;
+}
+
 /* модальное окно */
 
 [data-theme="dark"] #modal-window {
@@ -89,9 +93,17 @@
     background-color: #555555;
 }
 
+[data-theme="dark"] #jojoin {
+    background-color: black;
+}
+
 /* старт */
 
 [data-theme="dark"] .feature-card {
+    color: black;
+}
+
+[data-theme="dark"] .hero section {
     color: black;
 }
 
