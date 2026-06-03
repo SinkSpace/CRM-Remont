@@ -763,7 +763,7 @@ async function send(task) {
     out.style.whiteSpace = "pre-wrap";
     out.textContent = "⏳ думает...";
 
-    const settingsRes = await fetch(`/api/admin/dashboard?admin_id=${user.id}`);
+    const settingsRes = await fetch('/api/ai/settings');
     const settingsData = await settingsRes.json();
 
     if (!settingsRes.ok) {

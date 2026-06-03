@@ -1949,6 +1949,20 @@ async function checkSiteAdmin(adminId) {
     return result.rows[0];
 }
 
+app.get('/api/ai/settings', async (req, res) => {
+    try {
+        const result = await pool.query(
+            `SELECT ai_prompt, ai_enabled
+             FROM system_settings
+             WHERE id = 1`
+        );
+
+        res.json(result.rows[0] || {});
+    } catch (error) {
+        res.status(500).json({ error: 'Ошибка сервера' });
+    }
+});
+
 app.put('/api/admin/users/:id/active', async (req, res) => {
     try {
         const adminId = Number(req.body.admin_id);
