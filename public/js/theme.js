@@ -18,6 +18,18 @@ function applyTheme() {
     } else {
         document.documentElement.removeAttribute('data-theme');
     }
+
+    const finalTheme = theme === 'dark' ? 'dark' : 'light';
+
+    const menuIcon = document.querySelector('#menu');
+
+    if (menuIcon) {
+        menuIcon.src = finalTheme === 'dark'
+            ? 'svg/menu2.svg'
+            : 'svg/menu.svg';
+    }
+
+    root.setAttribute('data-theme', finalTheme);
 }
 
 applyTheme();

@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="/svg/icon.ico" type="image/x-icon">
     <link rel="stylesheet" href="css/index.css">
     <link rel="stylesheet" href="css/uni.css">
     <link rel="stylesheet" href="css/mobile.css">
@@ -15,8 +16,8 @@
 <body>
     <nav class="parent">
         <div class="parent" id="headName">
-            <img alt="Меню" src="menu.svg" id="menu" style="display: none;">
-            <h1>CRM-Sink</h1>
+            <img alt="Меню" src="svg/menu.svg" id="menu" style="display: none;">
+            <a href="/" id="headButton"><h1>CRM-Sink</h1></a>
         </div>
         <div>
             <input id="search" placeholder="🔍">
@@ -35,9 +36,9 @@
     </nav>
     <header class="parent">
         <a href="/archive"><button style="background-color: gray;">Архив</button></a>
-        <button style="visibility: hidden;">Добавить заказ</button>
+        <button style="visibility: hidden;" class="novis">Добавить заказ</button>
         <h2>Список заказов</h2>
-        <button style="visibility: hidden;">Архив</button>
+        <button style="visibility: hidden;" class="novis">Архив</button>
         <button id="addOrder">Добавить заказ</button>
     </header>
     <main>

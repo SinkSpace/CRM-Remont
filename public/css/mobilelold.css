@@ -1,0 +1,217 @@
+/* Большие ноутбуки */
+@media (max-width: 1440px) {
+
+}
+
+/* Планшеты */
+@media (max-width: 1024px) {
+
+    /* панель навигации */
+
+    .parent h1 {
+        font-size: 20px;
+    }
+
+    #search {
+        width: auto;
+    }
+
+    /* главная страница */
+
+    #workerHead, .tdWorker {
+        display: none;
+    }
+
+    #mainHead, .mainTable {
+        display: grid;
+        grid-template-columns:
+            3.213vw
+            25.553vw
+            11.593vw
+            30.402vw
+            6.192vw
+            10.835vw
+            11.213vw;
+    }
+
+    #modal-window {
+        padding: 16px;
+    }
+
+    .modal-row-2,
+    .modal-row-3 {
+        grid-template-columns: 1fr;
+    }
+
+    .modal-actions {
+        flex-direction: column;
+    }
+
+    #modal-button, .dop-button {
+        width: 100%;
+    }
+
+    /* старт */
+
+    * {
+        overflow-y: auto;
+    }
+
+    .hero section {
+        overflow-y: hidden;
+    }
+
+    /* настройки */
+
+    #sidebar button, .addButton {
+        width: 13vw;
+    }
+
+    main {
+        gap: 5vw;
+    }
+
+    #hm {
+        gap: 3vw;
+    }
+}
+
+/* Маленькие планшеты */
+@media (max-width: 768px) {
+
+    /* панель навигации */
+
+    #nameShop {
+        display: none;
+    }
+
+    #menu {
+        display: inline !important;
+    }
+
+    .admin-head-button {
+        display: none;
+    }
+
+    /* главная страница */
+
+    #priceHead, .tdPrice {
+        display: none;
+    }
+
+    #dateHead, .days-cell {
+        display: none;
+    }
+
+    #mainHead, .mainTable {
+        display: grid;
+        grid-template-columns:
+            3.213vw
+            25.553vw
+            15.593vw
+            35.402vw
+            15.213vw;
+    }
+
+    /* старт */
+
+    .hero section {
+        background-image: none;
+    }
+    
+    .double {
+        display: inline;
+    }
+
+    .feature-card {
+        width: 40vw;
+        height: 21vh;
+        padding-left: 3vw;
+        padding-right: 3vw;
+    }
+}
+
+/* Телефоны */
+@media (max-width: 480px) {
+
+    /* панель навигации */
+    .parent h1 {
+        display: none;
+    }
+
+    nav img {
+        width: 6vw;
+    }
+
+    /* главная страница */
+    #modelHead, #bugHead, .tdModel, .tdBug {
+        display: none;
+    }
+
+    .parent h2 {
+        display: none;
+    }
+
+    .novis {
+        display: none;
+    }
+
+    #mainHead, .mainTable {
+        display: grid;
+        grid-template-columns:
+            10vw
+            50vw
+            40vw;
+    }
+
+    #menu-window, #menu-window button {
+        width: 50vw;
+    }
+
+    /* старт */
+
+    .hero section {
+        height: 60vh !important;
+    }
+
+    .features-grid {
+        display: inline;
+    }
+
+    .feature-card {
+        margin-left: 10vw;
+        margin-right: 10vw;
+        width: 80vw;
+    }
+
+    .features {
+        height: auto !important;
+    }
+
+    /* Регистрация и вход */
+
+    #form {
+        background-image: none;
+    }
+
+    #form input {
+        width: 90vw;
+    }
+}
+
+/* Очень маленькие телефоны */
+@media (max-width: 360px) {
+    nav h1 {
+        font-size: 20px;
+    }
+
+    /* старт */
+
+    .hero section {
+        height: 70vh !important;
+    }
+
+    .hero section button {
+        font-size: 12px;
+    }
+}

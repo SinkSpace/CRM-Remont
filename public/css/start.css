@@ -1,3 +1,7 @@
+* {
+    overflow-y: hidden;
+}
+
 #headName {
     display: flex;
     justify-content: space-between;
@@ -6,6 +10,11 @@
 
 .end-nav {
     gap: 1vw;
+}
+
+.double {
+    display: flex;
+    gap: 3.5vw;
 }
 
 button {
@@ -73,7 +82,7 @@ footer {
     justify-content: center;
     color: white;
     background-color: #333333;
-    height: 3vw;
+    height: 6vh;
     display: flex;
     align-items: center; /* по вертикали */
 }

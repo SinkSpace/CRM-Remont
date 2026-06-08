@@ -24,6 +24,10 @@ header button {
     height: 35px;
 }
 
+.brd {
+    border-radius: 10px !important;
+}
+
 #search::placeholder {
     text-align: right;
 }
@@ -77,7 +81,8 @@ main {
 #priceHead, .tdPrice,
 #workerHead, .tdWorker,
 #dateBeginHead, .tdBegin,
-#dateHead, .days-cell {
+#dateHead, .days-cell,
+#editHead {
     padding: 10px;
     display: flex;
     justify-content: center;
@@ -87,10 +92,6 @@ main {
     word-break: break-word;
 }
 
-#editHead, .tdEdit {
-    padding: 10px;
-}
-
 .tdStatus {
     text-align: center;
 }
@@ -98,6 +99,7 @@ main {
 .tdEdit {
     display: flex;
     justify-content: center;
+    gap: 10px;
 }
 
 .tdEdit button {
@@ -105,7 +107,7 @@ main {
     border: 0px;
     color: white;
     border-radius: 5px;
-    margin-right: 1vw;
+    height: 3vh;
 }
 
 #mainHead,
@@ -303,21 +305,17 @@ main {
     line-height: 1.5; 
 }
 
-@media (max-width: 900px) {
-    #modal-window {
-        padding: 16px;
-    }
-
-    .modal-row-2,
-    .modal-row-3 {
-        grid-template-columns: 1fr;
-    }
-
-    .modal-actions {
-        flex-direction: column;
-    }
-
-    #modal-button, .dop-button {
-        width: 100%;
-    }
+#archiveTable #mainHead,
+#archiveTable .mainTable {
+    grid-template-columns:
+        46px
+        minmax(160px, 1.2fr)
+        minmax(120px, 0.8fr)
+        minmax(180px, 1.4fr)
+        minmax(80px, 0.6fr)
+        minmax(130px, 0.9fr)
+        minmax(110px, 0.8fr)
+        minmax(130px, 0.9fr)
+        minmax(100px, 0.7fr);
+    min-width: 1050px;
 }
