@@ -771,7 +771,7 @@ async function send(task) {
         return;
     }
 
-    const prompt = settingsData.settings?.ai_prompt || '';
+    const prompt = settingsData.ai_prompt || '';
     const message = replaceAiTags(prompt, task);
 
     const res = await fetch("/chat", {

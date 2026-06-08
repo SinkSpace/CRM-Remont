@@ -1632,7 +1632,7 @@ async function chat(token, message) {
         throw new Error('ИИ отключён администратором');
     }
 
-    const finalPrompt = `${settings.ai_prompt || ''}\n\nЗапрос пользователя:\n${message}`;
+    const finalPrompt = message;
 
     const res = await axios({
         method: 'post',
