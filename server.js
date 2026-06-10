@@ -11,6 +11,7 @@ const PizZip = require('pizzip');
 const Docxtemplater = require('docxtemplater');
 const bwipjs = require('bwip-js');
 const dotenv = require('dotenv');
+const nodemailer = require('nodemailer');
 
 const templatesDir = path.join(__dirname, 'uploads', 'templates');
 const generatedDir = path.join(__dirname, 'uploads', 'generated');
@@ -542,6 +543,16 @@ app.post('/api/register', async (req, res) => {
 
         const { email, password, display_name, shop_name, phone } = req.body;
 
+        const passwordRegex = /^(?=.*[a-zа-я])(?=.*[A-ZА-Я])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,}$/;
+
+        if (!passwordRegex.test(password)) {
+            await client.query('ROLLBACK');
+
+            return res.status(400).json({
+                error: 'Пароль должен содержать минимум 8 символов, заглавную букву, строчную букву, цифру и специальный символ'
+            });
+        }
+
         if (!email || !password || !display_name) {
             await client.query('ROLLBACK');
             return res.status(400).json({ error: 'email, password и display_name обязательны' });
@@ -590,6 +601,11 @@ app.post('/api/register', async (req, res) => {
         );
 
         await client.query('COMMIT');
+
+        sendRegisterEmail(email, display_name)
+            .catch(mailError => {
+                console.error('Ошибка отправки письма:', mailError);
+        });
 
         res.status(201).json({
             message: 'Пользователь зарегистрирован',
@@ -1590,6 +1606,7 @@ process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 const axios = require("axios");
 const qs = require("qs");
 const { v4: uuidv4 } = require("uuid");
+const { env } = require('process');
 
 dotenv.config();
 
@@ -1679,6 +1696,29 @@ app.post("/chat", async (req, res) => {
 });
 
 /******** ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ *********/
+
+const mailer = nodemailer.createTransport({
+    host: 'smtp.yandex.ru',
+    port: 465,
+    secure: true,
+    family: 4,
+    connectionTimeout: 15000,
+    greetingTimeout: 15000,
+    socketTimeout: 15000,
+    auth: {
+        user: process.env.email,
+        pass: process.env.passemail
+    }
+});
+
+async function sendRegisterEmail(email, displayName) {
+    await mailer.sendMail({
+        from: `"CRM-Sink" <${process.env.email}>`,
+        to: email,
+        subject: 'Регистрация завершена',
+        text: `Здравствуйте, ${displayName}! Ваш аккаунт успешно зарегистрирован в CRM-Sink.`
+    });
+}
 
 /* normalizePhone */
 function normalizePhone(phone = '') {

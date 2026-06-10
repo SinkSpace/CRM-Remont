@@ -1,3 +1,20 @@
+body {
+    background-color: #e8e8e8;
+}
+
+nav, #sidebar, #hm {
+    background-color: white;
+}
+
+#sidebar, #hm {
+    padding: 15px;
+    border-radius: 10px;
+}
+
+#sidebar {
+    height: 75vh;
+}
+
 #search {
     border-radius: 10px 0px 0px 10px;
     border: 0px;
@@ -55,6 +72,11 @@ header {
     border: none;
     color: white;
     border-radius: 10px;
+    margin-right: 10px;
+}
+
+.addButton {
+    margin-top: 5px;
 }
 
 input {
@@ -124,6 +146,7 @@ select {
 .worker-actions button {
     width: auto !important;
     min-width: 100px;
+    margin-top: 5px;
 }
 
 .device-form {
@@ -354,6 +377,10 @@ select {
     gap: 10px;
 }
 
+#dayDiv button {
+    margin-top: 10px;
+}
+
 #timeDiv input {
     width: 7vw;
 }
@@ -387,4 +414,12 @@ select {
     select {
         width: 100%;
     }
+}
+
+.settings-tab {
+    transition: all 0.2s ease;
+}
+
+.settings-tab:hover {
+    transform: translateX(5px);
 }

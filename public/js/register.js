@@ -20,6 +20,16 @@ registerButton.addEventListener('click', async () => {
         return;
     }
 
+    const passwordRegex =
+    /^(?=.*[a-zа-я])(?=.*[A-ZА-Я])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,}$/;
+
+    if (!passwordRegex.test(password)) {
+        alert(
+            'Пароль должен содержать минимум 8 символов, заглавную букву, строчную букву, цифру и специальный символ'
+        );
+        return;
+    }
+
     try {
         const response = await fetch('/api/register', {
             method: 'POST',

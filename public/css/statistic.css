@@ -1,7 +1,29 @@
+body {
+    background-color: #e8e8e8;
+}
+
+nav {
+    background-color: white;
+}
+
 main {
     display: flex;
     justify-content: center;
     gap: 100px;
+}
+
+main div {
+    background-color: white;
+    padding: 20px;
+    border-radius: 10px;
+    margin-top: 10px;
+}
+
+.workers div {
+    background-color: white;
+    margin-top: 20px;
+    padding: 20px;
+    border-radius: 10px;
 }
 
 main section {

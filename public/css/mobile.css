@@ -34,7 +34,7 @@ textarea {
 }
 
 /* Планшеты */
-@media (max-width: 1024px) {
+@media (max-width: 1300px) {
     /* Общая навигация */
     nav {
         gap: 12px;
@@ -253,7 +253,7 @@ textarea {
 }
 
 /* Маленькие планшеты */
-@media (max-width: 768px) {
+@media (max-width: 1000px) {
     /* Общая навигация */
     nav {
         height: auto;
@@ -412,7 +412,7 @@ textarea {
 }
 
 /* Телефоны */
-@media (max-width: 480px) {
+@media (max-width: 750px) {
     /* Общая навигация */
     nav {
         padding: 10px 12px;
@@ -478,11 +478,10 @@ textarea {
         display: none !important;
     }
 
-    /* Главная и архив: оставляем только №, статус и действие */
-    #modelHead,
+    #statusHead,
     #bugHead,
     #dateBeginHead,
-    .tdModel,
+    .tdStatus,
     .tdBug,
     .tdBegin {
         display: none;

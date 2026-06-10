@@ -1,3 +1,20 @@
+body {
+    background-color: #e8e8e8;
+}
+
+nav, #sidebar, #hm {
+    background-color: white;
+}
+
+#sidebar, #hm {
+    padding: 15px;
+    border-radius: 10px;
+}
+
+#sidebar {
+    height: 75vh;
+}
+
 #nameShop {
     gap: 10px;
 }

@@ -1,35 +1,32 @@
 function applyTheme() {
     const savedTheme = localStorage.getItem('theme');
 
+    let finalTheme;
+
     if (savedTheme === 'dark') {
-        document.documentElement.setAttribute('data-theme', 'dark');
-        return;
+        finalTheme = 'dark';
+    } else if (savedTheme === 'light') {
+        finalTheme = 'light';
+    } else {
+        finalTheme = window.matchMedia('(prefers-color-scheme: dark)').matches
+            ? 'dark'
+            : 'light';
     }
 
-    if (savedTheme === 'light') {
-        document.documentElement.removeAttribute('data-theme');
-        return;
-    }
-
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-
-    if (prefersDark) {
+    if (finalTheme === 'dark') {
         document.documentElement.setAttribute('data-theme', 'dark');
     } else {
         document.documentElement.removeAttribute('data-theme');
     }
 
-    const finalTheme = theme === 'dark' ? 'dark' : 'light';
-
-    const menuIcon = document.querySelector('#menu');
+    const menuIcon = document.getElementById('menu');
 
     if (menuIcon) {
-        menuIcon.src = finalTheme === 'dark'
-            ? 'svg/menu2.svg'
-            : 'svg/menu.svg';
+        menuIcon.src =
+            finalTheme === 'dark'
+                ? 'svg/menu2.svg'
+                : 'svg/menu.svg';
     }
-
-    root.setAttribute('data-theme', finalTheme);
 }
 
 applyTheme();

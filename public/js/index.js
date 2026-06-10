@@ -165,7 +165,6 @@ document.getElementById('statusHead').onclick = () => sortTasks('status', docume
 document.getElementById('bugHead').onclick = () => sortTasks('crush', document.getElementById('bugHead'));
 document.getElementById('priceHead').onclick = () => sortTasks('price', document.getElementById('priceHead'));
 document.getElementById('workerHead').onclick = () => sortTasks('worker', document.getElementById('workerHead'));
-document.getElementById('dateBeginHead').onclick = () => sortTasks('acceptDate', document.getElementById('dateBeginHead'));
 document.getElementById('dateHead').onclick = () => sortTasks('acceptDate', document.getElementById('dateHead'));
 
 /* Создание списка контактов */ 
@@ -197,12 +196,12 @@ function renderTasks() {
 
     if (!Array.isArray(tasks) || tasks.length === 0) {
         table.style.visibility = "hidden";
-        noTask.style.visibility = "visible";
-        noSearch.style.visibility = "hidden";
+        noTask.style.display = "block";
+        noSearch.style.display = "none";
         return;
     }
 
-    noTask.style.visibility = "hidden";
+    noTask.style.display = "none";
 
     /* очистка строк */
     table.querySelectorAll('.mainTable').forEach(row => row.remove());
@@ -221,13 +220,13 @@ function renderTasks() {
     });
 
     if (filtered.length === 0) {
-        table.style.visibility = "hidden";
-        noSearch.style.visibility = "visible";
+        table.style.display = "none";
+        noSearch.style.display = "block";
         return;
     }
 
-    table.style.visibility = "visible";
-    noSearch.style.visibility = "hidden";
+    table.style.display = "block";
+    noSearch.style.display = "none";
 
     filtered.forEach((task, index) => {
         const tr = document.createElement('section');

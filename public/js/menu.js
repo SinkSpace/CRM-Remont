@@ -2,12 +2,15 @@ const menuButton = document.getElementById('menu');
 const modalMenu = document.getElementById('modal-menu');
 
 if (menuButton && modalMenu) {
-    menuButton.onclick = () => modalMenu.style.display = 'flex';
-    modalMenu.onclick = (event) => {
-        if (event.target === event.currentTarget) {
-            modalMenu.style.display = 'none';
+    menuButton.addEventListener('click', () => {
+        modalMenu.classList.add('show');
+    });
+
+    modalMenu.addEventListener('click', (event) => {
+        if (event.target === modalMenu) {
+            modalMenu.classList.remove('show');
         }
-    };
+    });
 }
 
 const logoutButton = document.getElementById('logoutButton');
@@ -68,3 +71,13 @@ window.escapeHtml = function (value) {
 };
 
 window.escapeHTML = window.escapeHtml;
+
+menuButton.onclick = () => {
+    modalMenu.classList.add('show');
+};
+
+modalMenu.onclick = (event) => {
+    if (event.target === event.currentTarget) {
+        modalMenu.classList.remove('show');
+    }
+};
