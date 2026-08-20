@@ -6,7 +6,6 @@ h1 {
 main {
     display: flex;
     justify-content: center;
-    background-image: url('../img/join.jpg');
     height: 91vh;
     align-items: center;
 }

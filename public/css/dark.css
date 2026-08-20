@@ -3,6 +3,31 @@
     color: white;
 }
 
+[data-theme="dark"] nav {
+    background-color: black;
+    color: white;
+}
+
+[data-theme="dark"] .incomeBlock {
+    background-color: black;
+    color: white;
+}
+
+[data-theme="dark"] header {
+    background-color: black;
+    color: white;
+}
+
+[data-theme="dark"] #hm {
+    background-color: black;
+    color: white;
+}
+
+[data-theme="dark"] .workers div {
+    background-color: black;
+    color: white;
+}
+
 [data-theme="dark"] input {
     color: white;
 }

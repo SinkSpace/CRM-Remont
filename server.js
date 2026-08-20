@@ -2138,6 +2138,6 @@ app.put('/api/admin/settings', async (req, res) => {
 const PORT = '80';
 const HOST = '0.0.0.0';
 
-app.listen(PORT, HOST, () => {
-    console.log('Сервер запущен, домен http://crmsink.ru');
+app.listen(3000, () => {
+    console.log('Сервер запущен');
 });
