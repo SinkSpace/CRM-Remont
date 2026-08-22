@@ -195,7 +195,7 @@ function renderTasks() {
     const statusFilter = complete?.value || 'Все статусы';
 
     if (!Array.isArray(tasks) || tasks.length === 0) {
-        table.style.visibility = "hidden";
+        table.style.display = "none";
         noTask.style.display = "block";
         noSearch.style.display = "none";
         return;
