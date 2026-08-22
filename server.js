@@ -2138,6 +2138,6 @@ app.put('/api/admin/settings', async (req, res) => {
 const PORT = '80';
 const HOST = '0.0.0.0';
 
-app.listen(3000, () => {
+app.listen(PORT, HOST, () => {
     console.log('Сервер запущен');
 });
