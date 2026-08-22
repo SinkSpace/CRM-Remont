@@ -49,7 +49,7 @@ if (menuWindow && userJoin && userJoin.role === 'admin') {
 
 const headName = document.getElementById('headName');
 
-if (headName && userJoin && userJoin.role === 'admin') {
+/*if (headName && userJoin && userJoin.role === 'admin') {
     const adminLink = document.createElement('a');
     adminLink.href = '/admin';
 
@@ -59,7 +59,7 @@ if (headName && userJoin && userJoin.role === 'admin') {
 
     adminLink.appendChild(adminButton);
     headName.appendChild(adminLink);
-}
+}*/
 
 window.escapeHtml = function (value) {
     return String(value)
