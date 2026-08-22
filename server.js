@@ -2135,9 +2135,4 @@ app.put('/api/admin/settings', async (req, res) => {
 
 /******** ЗАПУСК СЕРВЕРА *********/
 
-const PORT = '80';
-const HOST = '0.0.0.0';
-
-app.listen(PORT, HOST, () => {
-    console.log('Сервер запущен');
-});
+module.exports = app;
