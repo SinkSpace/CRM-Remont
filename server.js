@@ -57,9 +57,9 @@ fs.mkdirSync(templatesDir, { recursive: true });
 fs.mkdirSync(generatedDir, { recursive: true });
 
 /******** MIDDLEWARE *********/
-app.use(express.static(path.join(__dirname, 'public')));
-app.use(cors());
-app.use(express.json());
+const middleware = require('./middleware/middleware');
+
+middleware.middle;
 
 const pageRoutes = require('./routes/pageRoutes');
 
