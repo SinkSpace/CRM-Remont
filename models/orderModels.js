@@ -60,4 +60,5 @@ async function query(data) {
         ]
     );
 }
+
 module.exports = query;

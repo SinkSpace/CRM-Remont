@@ -1,6 +1,8 @@
 const path = require('path');
 const query = require('../models/orderModels');
-const upsertModules = require('../models/upsertModels');
+const upsertModels = require('../models/upsertModels');
+const selectOrderModels = require('../models/selectOrderModels');
+const selectAllOrderModels = require('../models/selectAllOrderModels');
 const writeLog = require('../models/writeLog');
 
 /* 1. Создание заказа */
@@ -32,8 +34,8 @@ const postOrders = async (req, res) => {
             return res.status(400).json({ error: 'user_id required' }); //если пользователь не авторизован
         }
 
-        await upsertModules.upsertContact(company_id, customer, phone);
-        await upsertModules.upsertDevice(company_id, user_id, device);
+        await upsertModels.upsertContact(company_id, customer, phone);
+        await upsertModels.upsertDevice(company_id, user_id, device);
 
         const result = await query(req.body);
 
@@ -61,5 +63,37 @@ const postOrders = async (req, res) => {
         res.status(500).json({ error: 'Ошибка сервера' });
     }
 };
+
+const getOrders = async (req, res) => {
+    try {
+        const { company_id } = req.query;
+
+        if (!company_id) {
+            return res.status(400).json({ error: 'company_id required' });
+        }
+
+        const result = selectOrderModels;
+
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Ошибка при получении заказов:', error);
+        res.status(500).json({ error: 'Ошибка сервера' });
+    }
+};
+
+const getCompanyID = async (req, res) => {
+    try {
+        const companyId = Number(req.params.companyId);
+
+        const result = selectAllOrderModels;
+
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Ошибка при получении заказов:', error);
+        res.status(500).json({ error: 'Ошибка сервера' });
+    }
+};
+
+
 
 module.exports = { postOrders };
