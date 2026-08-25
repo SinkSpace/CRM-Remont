@@ -61,42 +61,9 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(cors());
 app.use(express.json());
 
-/******** СТРАНИЦЫ *********/
-app.get('/', (req, res) => { //Главная страница
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
+const pageRoutes = require('./routes/pageRoutes');
 
-app.get('/register', (req, res) => { //Регистрация
-    res.sendFile(path.join(__dirname, 'public', 'register.html'));
-})
-
-app.get('/join', (req, res) => { //Вход
-    res.sendFile(path.join(__dirname, 'public', 'join.html'));
-})
-
-app.get('/logs', (req, res) => { //Логи
-    res.sendFile(path.join(__dirname, 'public', 'logs.html'));
-})
-
-app.get('/settings', (req, res) => { //Настройки
-    res.sendFile(path.join(__dirname, 'public', 'settings.html'))
-})
-
-app.get('/admin', (req, res) => { //Админ-панель
-    res.sendFile(path.join(__dirname, 'public', 'admin.html'))
-})
-
-app.get('/archive', (req, res) => { //Архив
-    res.sendFile(path.join(__dirname, 'public', 'archive.html'))
-})
-
-app.get('/start', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'start.html'))
-})
-
-app.get('/statistic', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'statistic.html'))
-})
+app.use('/', pageRoutes);
 
 /******** ЗАКАЗЫ *********/
 
