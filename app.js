@@ -67,101 +67,17 @@ const pageRoutes = require('./routes/pageRoutes');
 
 app.use('/', pageRoutes);
 
-/******** ЗАКАЗЫ *********/
+/******** Заказы *********/
 
 const orderRoutes = require('./routes/orderRoutes');
 
-app.use('/', orderRoutes);
+/******** Архивация *********/
 
-/* 1.4.1 Загрузка архива */
-app.get('/api/archive/:companyId', async (req, res) => {
-    try {
-        const companyId = Number(req.params.companyId);
+const archiveRoutes = require('./routes/archiveRoutes');
 
-        const result = await pool.query(`
-            SELECT
-                id,
-                phone,
-                customer,
-                worker,
-                device,
-                model,
-                SN AS "SN",
-                status,
-                price,
-                pre,
-                acceptDate AS "acceptDate",
-                deadline,
-                crush,
-                note,
-                is_archived,
-                archived_at
-                FROM orders
-                WHERE company_id = $1
-                AND is_archived = true
-                ORDER BY archived_at DESC NULLS LAST, id DESC
-                `, [companyId]);
+app.use('/', archiveRoutes);
 
-                res.json(result.rows);
-    } catch (error) {
-        console.error('Ошибка загрузки архива:', error);
-        res.status(500).json({error: 'Ошибка сервера'});
-    }
-});
-
-/* 1.5 Восстановление */
-app.put('/api/orders/:id/unarchive', async (req, res) => {
-    try {
-        const id = Number(req.params.id);
-        const { company_id, user_id } = req.body;
-
-        if (!company_id) {
-            return res.status(400).json({ error: 'company_id required' });
-        }
-
-        const beforeResult = await pool.query(
-            `SELECT id, customer, worker, model, status, price, is_archived
-             FROM orders
-             WHERE id = $1 AND company_id = $2`,
-            [id, company_id]
-        );
-
-        const before = beforeResult.rows[0];
-
-        if (!before) {
-            return res.status(404).json({ error: 'Заказ не найден' });
-        }
-
-        const result = await pool.query(
-            `UPDATE orders
-             SET is_archived = false,
-                 archived_at = NULL
-             WHERE id = $1 AND company_id = $2
-             RETURNING *`,
-            [id, company_id]
-        );
-
-        await writeLog({
-            company_id,
-            user_id: user_id || null,
-            entity_type: 'order',
-            entity_id: id,
-            action: 'unarchive',
-            title: `Заказ №${id} восстановлен из архива`,
-            details: {
-                before,
-                after: result.rows[0]
-            }
-        });
-
-        res.json(result.rows[0]);
-    } catch (error) {
-        console.error('Ошибка восстановления заказа:', error);
-        res.status(500).json({ error: 'Ошибка сервера' });
-    }
-});
-
-/******** АВТОРИЗАЦИЯ *********/
+/******** Авторизация *********/
 
 /* 2. Регистрация */
 app.post('/api/register', async (req, res) => {

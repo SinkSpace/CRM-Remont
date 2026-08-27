@@ -70,4 +70,18 @@ async function archived(data) {
     return result;
 };
 
-module.exports = { orders, archived };
+async function archivedNow(data) {
+    const { id, company_id } = data;
+    const result = await pool.query(
+            `UPDATE orders
+             SET is_archived = true,
+                 archived_at = NOW()
+             WHERE id = $1 AND company_id = $2
+             RETURNING *`,
+            [id, company_id]
+        );
+
+    return result;
+};
+
+module.exports = { orders, archived, archivedNow };
