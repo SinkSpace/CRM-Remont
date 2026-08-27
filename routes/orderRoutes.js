@@ -1,4 +1,4 @@
-const get = require('./../contollers/orderContoller');
+const get = require('../contollers/orderContoller');
 const express = require('express');
 const router = express.Router();
 
