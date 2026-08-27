@@ -1302,7 +1302,7 @@ const { env } = require('process');
 
 dotenv.config();
 
-app.use(express.static("public"));
+app.use(express.static(path.join(__dirname, 'public')));
 
 const OAUTH_URL =
   "https://ngw.devices.sberbank.ru:9443/api/v2/oauth";
