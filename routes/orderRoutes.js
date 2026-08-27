@@ -6,7 +6,7 @@ router.post('/orders', get.postOrders);
 
 router.get('/orders', get.getOrders);
 
-router.get('/orders/:companyId', get.getCompanyID);
+router.get('/orders/company/:companyId', get.getCompanyID);
 
 router.get('/orders/:id', get.getID);
 

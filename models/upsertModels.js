@@ -62,4 +62,8 @@ async function upsertDevice(company_id, user_id, name) {
     return result.rows[0];
 }
 
+function normalizePhone(phone = '') {
+    return String(phone).replace(/\D/g, '');
+}
+
 module.exports = { upsertContact, upsertDevice };
