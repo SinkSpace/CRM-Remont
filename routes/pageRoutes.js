@@ -1,4 +1,4 @@
-const get = require('./../contollers/pageContoller');
+const get = require('../controllers/pageController');
 const express = require('express');
 const router = express.Router();
 

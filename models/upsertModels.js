@@ -1,5 +1,5 @@
 const express = require('express');
-const pool = require('./../db');
+const pool = require('../db');
 
 async function upsertContact(company_id, customer_name, phone) {
     const phone_normalized = normalizePhone(phone);
