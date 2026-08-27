@@ -10,6 +10,6 @@ router.get('/orders/company/:companyId', get.getCompanyID);
 
 router.get('/orders/:id', get.getID);
 
-/*router.get('/api/orders/:id/archive', get.getArchiveID);*/
+router.get('/api/orders/:id/archive', get.getArchiveID);
 
 module.exports = router;

@@ -73,60 +73,6 @@ const orderRoutes = require('./routes/orderRoutes');
 
 app.use('/', orderRoutes);
 
-/* 1.2 Обновление заказа */
-
-/* 1.4 Архивация */
-app.put('/api/orders/:id/archive', async (req, res) => {
-    try {
-        const id = Number(req.params.id);
-        const { company_id, user_id } = req.body;
-
-        if (!company_id) {
-            return res.status(400).json({ error: 'company_id required' });
-        }
-
-        const beforeResult = await pool.query(
-            `SELECT id, customer, worker, model, status, price, is_archived
-             FROM orders
-             WHERE id = $1 AND company_id = $2`,
-            [id, company_id]
-        );
-
-        const before = beforeResult.rows[0];
-
-        if (!before) {
-            return res.status(404).json({ error: 'Заказ не найден' });
-        }
-
-        const result = await pool.query(
-            `UPDATE orders
-             SET is_archived = true,
-                 archived_at = NOW()
-             WHERE id = $1 AND company_id = $2
-             RETURNING *`,
-            [id, company_id]
-        );
-
-        await writeLog({
-            company_id,
-            user_id: user_id || null,
-            entity_type: 'order',
-            entity_id: id,
-            action: 'archive',
-            title: `Заказ №${id} отправлен в архив`,
-            details: {
-                before,
-                after: result.rows[0]
-            }
-        });
-
-        res.json(result.rows[0]);
-    } catch (error) {
-        console.error('Ошибка архивации заказа:', error);
-        res.status(500).json({ error: 'Ошибка сервера' });
-    }
-});
-
 /* 1.4.1 Загрузка архива */
 app.get('/api/archive/:companyId', async (req, res) => {
     try {

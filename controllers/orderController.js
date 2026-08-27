@@ -4,6 +4,8 @@ const upsertModels = require('../models/upsertModels');
 const selectOrderModels = require('../models/selectOrderModels');
 const selectAllOrderModels = require('../models/selectAllOrderModels');
 const writeLog = require('../models/writeLog');
+const beforeModels = require('../models/beforeModels');
+const update = require('../models/updateModels');
 const pool = require('../db');
 
 /* 1. Создание заказа */
@@ -121,70 +123,14 @@ const getID = async (req, res) => {
             return res.status(400).json({ error: 'company_id required' });
         }
 
-        const beforeResult = await pool.query(
-            `SELECT
-                id, phone, customer, worker, device, model, SN,
-                status, price, pre,
-                acceptDate, deadline, crush, note
-             FROM orders
-             WHERE id = $1 AND company_id = $2`,
-            [id, company_id]
-        );
+        const beforeResult = await beforeModels.order(id, company_id);
 
         const before = beforeResult.rows[0];
 
         await upsertContact(company_id, customer, phone);
         await upsertDevice(company_id, user_id, device);
 
-        const result = await pool.query(
-            `UPDATE orders
-             SET phone = $1,
-                 customer = $2,
-                 worker = $3,
-                 device = $4,
-                 model = $5,
-                 SN = $6,
-                 status = $7,
-                 price = $8,
-                 pre = $9,
-                 acceptDate = $10,
-                 deadline = $11,
-                 crush = $12,
-                 note = $13
-             WHERE id = $14 AND company_id = $15
-             RETURNING
-                 id,
-                 phone,
-                 customer,
-                 worker,
-                 device,
-                 model,
-                 SN AS "SN",
-                 status,
-                 price,
-                 pre,
-                 acceptDate AS "acceptDate",
-                 deadline,
-                 crush,
-                 note`,
-            [
-                phone,
-                customer,
-                worker,
-                device,
-                model,
-                SN,
-                status,
-                price,
-                pre,
-                acceptDate,
-                deadline,
-                crush,
-                note,
-                id,
-                company_id
-            ]
-        );
+        const result = await update.orders(phone, customer, worker, device, model, SN, status, price, pre, acceptDate, deadline, crush, note, id, company_id);
 
         const updatedOrder = result.rows[0];
 
@@ -208,4 +154,43 @@ const getID = async (req, res) => {
     }
 };
 
-module.exports = { postOrders, getOrders, getCompanyID, getID };
+const getArchiveID = async (req, res) => {
+    try {
+        const id = Number(req.params.id);
+        const { company_id, user_id } = req.body;
+
+        if (!company_id) {
+            return res.status(400).json({ error: 'company_id required' });
+        }
+
+        const beforeResult = await beforeModels.worker(id, company_id);
+
+        const before = beforeResult.rows[0];
+
+        if (!before) {
+            return res.status(404).json({ error: 'Заказ не найден' });
+        }
+
+        const result = await update.archived(id, company_id)
+
+        await writeLog({
+            company_id,
+            user_id: user_id || null,
+            entity_type: 'order',
+            entity_id: id,
+            action: 'archive',
+            title: `Заказ №${id} отправлен в архив`,
+            details: {
+                before,
+                after: result.rows[0]
+            }
+        });
+
+        res.json(result.rows[0]);
+    } catch (error) {
+        console.error('Ошибка архивации заказа:', error);
+        res.status(500).json({ error: 'Ошибка сервера' });
+    }
+};
+
+module.exports = { postOrders, getOrders, getCompanyID, getID, getArchiveID };

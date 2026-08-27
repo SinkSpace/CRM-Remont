@@ -2,7 +2,7 @@ const express = require('express');
 const pool = require('../db');
 
 async function upsertContact(company_id, customer_name, phone) {
-    const phone_normalized = normalizePhone(phone);
+    const phone_normalized = String(phone).replace(/\D/g, '');;
 
     if (!customer_name || !phone_normalized) return null;
 
@@ -60,10 +60,6 @@ async function upsertDevice(company_id, user_id, name) {
     );
 
     return result.rows[0];
-}
-
-function normalizePhone(phone = '') {
-    return String(phone).replace(/\D/g, '');
 }
 
 module.exports = { upsertContact, upsertDevice };
