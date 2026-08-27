@@ -4,6 +4,7 @@ const upsertModels = require('../models/upsertModels');
 const selectOrderModels = require('../models/selectOrderModels');
 const selectAllOrderModels = require('../models/selectAllOrderModels');
 const writeLog = require('../models/writeLog');
+const pool = require('../db');
 
 /* 1. Создание заказа */
 const postOrders = async (req, res) => {
@@ -72,7 +73,7 @@ const getOrders = async (req, res) => {
             return res.status(400).json({ error: 'company_id required' });
         }
 
-        const result = selectOrderModels;
+        const result = await selectOrderModels(company_id);
 
         res.json(result.rows);
     } catch (error) {
@@ -85,7 +86,7 @@ const getCompanyID = async (req, res) => {
     try {
         const companyId = Number(req.params.companyId);
 
-        const result = selectAllOrderModels;
+        const result = await selectAllOrderModels(companyId);
 
         res.json(result.rows);
     } catch (error) {
