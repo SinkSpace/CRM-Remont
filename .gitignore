@@ -5,4 +5,4 @@ archive.json
 uploads
 db copy.js
 .gitignore
-.vscode
+server-old.js
