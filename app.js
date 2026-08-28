@@ -16,6 +16,10 @@ const nodemailer = require('nodemailer');
 const templatesDir = path.join(__dirname, 'uploads', 'templates');
 const generatedDir = path.join(__dirname, 'uploads', 'generated');
 
+app.use(cors());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true })); 
+
 /******** НАСТРОЙКИ *********/
 const storage = multer.diskStorage({
     destination: (req, file, cb) => cb(null, templatesDir),
@@ -57,9 +61,9 @@ fs.mkdirSync(templatesDir, { recursive: true });
 fs.mkdirSync(generatedDir, { recursive: true });
 
 /******** MIDDLEWARE *********/
-const middleware = require('./middleware/middleware');
+/*const middleware = require('./middleware/middleware');
 
-middleware.middle;
+middleware.middle;*/
 
 /******** Отправка страниц *********/
 
