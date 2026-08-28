@@ -84,4 +84,14 @@ async function archivedNow(data) {
     return result;
 };
 
-module.exports = { orders, archived, archivedNow };
+async function companies(data) {
+    const { user, company } = data;
+    return client.query(
+        `UPDATE companies
+            SET owner_user_id = $1
+            WHERE id = $2`,
+        [user, company]
+    )
+}
+
+module.exports = { orders, archived, archivedNow, companies };

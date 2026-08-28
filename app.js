@@ -60,11 +60,6 @@ const DEFAULT_WORKER = [
 fs.mkdirSync(templatesDir, { recursive: true });
 fs.mkdirSync(generatedDir, { recursive: true });
 
-/******** MIDDLEWARE *********/
-/*const middleware = require('./middleware/middleware');
-
-middleware.middle;*/
-
 /******** Отправка страниц *********/
 
 const pageRoutes = require('./routes/pageRoutes');
@@ -1256,29 +1251,6 @@ app.post("/chat", async (req, res) => {
 });
 
 /******** ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ *********/
-
-const mailer = nodemailer.createTransport({
-    host: 'smtp.yandex.ru',
-    port: 465,
-    secure: true,
-    family: 4,
-    connectionTimeout: 15000,
-    greetingTimeout: 15000,
-    socketTimeout: 15000,
-    auth: {
-        user: process.env.email,
-        pass: process.env.passemail
-    }
-});
-
-async function sendRegisterEmail(email, displayName) {
-    await mailer.sendMail({
-        from: `"CRM-Sink" <${process.env.email}>`,
-        to: email,
-        subject: 'Регистрация завершена',
-        text: `Здравствуйте, ${displayName}! Ваш аккаунт успешно зарегистрирован в CRM-Sink.`
-    });
-}
 
 /* normalizePhone */
 function normalizePhone(phone = '') {

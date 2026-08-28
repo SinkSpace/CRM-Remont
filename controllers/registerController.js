@@ -1,84 +1,61 @@
-const path = require('path');
 const pool = require('../db');
-const settingsModels = require('../models/settingsModels');
+const bcrypt = require('bcrypt');
+const settings = require('../models/settingsModels');
 const selectRegister = require('../models/selectRegisterModels');
 const insertRegister = require('../models/insertRegisterModels');
+const update = require('../models/updateModels');
+const mail = require('../models/mailModels');
 
 const postRegister = async (req, res) => {
     const client = await pool.connect();
 
-    const settingsResult = await settingsModels.registrationEnabled();
-
-    if (settingsResult.rows[0]?.registration_enabled === false) {
-        await client.query('ROLLBACK');
-        return res.status(403).json({ error: 'Регистрация временно отключена' });
-    }
-
     try {
         await client.query('BEGIN');
 
-        const { email, password, display_name, shop_name, phone } = req.body;
-
-        const passwordRegex = /^(?=.*[a-zа-я])(?=.*[A-ZА-Я])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,}$/;
-
-        if (!passwordRegex.test(password)) {
+        const settingsResult = await settings.registrationEnabled();
+        if (settingsResult.rows[0]?.registration_enabled === false) {
             await client.query('ROLLBACK');
-
-            return res.status(400).json({
-                error: 'Пароль должен содержать минимум 8 символов, заглавную букву, строчную букву, цифру и специальный символ'
-            });
+            return res.status(403).json({ error: 'Регистрация временно отключена' });
         }
+
+        const { email, password, display_name, shop_name, phone } = req.body;
 
         if (!email || !password || !display_name) {
             await client.query('ROLLBACK');
             return res.status(400).json({ error: 'email, password и display_name обязательны' });
         }
 
-        const existingUser = await selectRegister.email(email);
+        const passwordRegex = /^(?=.*[a-zа-я])(?=.*[A-ZА-Я])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,}$/;
+        if (!passwordRegex.test(password)) {
+            await client.query('ROLLBACK');
+            return res.status(400).json({
+                error: 'Пароль должен содержать минимум 8 символов, заглавную букву, строчную букву, цифру и специальный символ'
+            });
+        }
 
+        const existingUser = await selectRegister.email(email);
         if (existingUser.rows.length > 0) {
             await client.query('ROLLBACK');
             return res.status(409).json({ error: 'Пользователь с таким email уже существует' });
         }
 
-        const companyResult = await client.query(
-            `INSERT INTO companies (name)
-             VALUES ($1)
-             RETURNING id, name`,
-            [shop_name || display_name]
-        );
-
+        const companyResult = await insertRegister.companies(shop_name, display_name);
         const company = companyResult.rows[0];
+        
         const passwordHash = await bcrypt.hash(password, 10);
-
-        const userResult = await client.query(
-            `INSERT INTO users (email, password_hash, role, company_id)
-             VALUES ($1, $2, $3, $4)
-             RETURNING id, email, role, company_id`,
-            [email, passwordHash, 'master', company.id]
-        );
-
+        const userResult = await insertRegister.users(email, passwordHash, company.id);
         const user = userResult.rows[0];
 
-        await client.query(
-            `INSERT INTO user_profiles (user_id, company_id, display_name, shop_name, phone)
-             VALUES ($1, $2, $3, $4, $5)`,
-            [user.id, company.id, display_name, shop_name || null, phone || null]
-        );
+        await insertRegister.userProfiles(user.id, company.id, display_name, shop_name, phone);
 
-        await client.query(
-            `UPDATE companies
-             SET owner_user_id = $1
-             WHERE id = $2`,
-            [user.id, company.id]
-        );
+        await update.companies(user.id, company.id);
 
         await client.query('COMMIT');
 
-        sendRegisterEmail(email, display_name)
+        mail.sendRegisterEmail(email, display_name) 
             .catch(mailError => {
                 console.error('Ошибка отправки письма:', mailError);
-        });
+            });
 
         res.status(201).json({
             message: 'Пользователь зарегистрирован',
@@ -108,24 +85,7 @@ const postLogin = async (req, res) => {
             });
         }
 
-        const result = await pool.query(
-            `SELECT
-                u.id,
-                u.email,
-                u.password_hash,
-                u.role,
-                u.is_active,
-                u.company_id,
-                p.display_name,
-                p.shop_name,
-                p.phone,
-                p.avatar_url
-            FROM users u
-            LEFT JOIN user_profiles p ON p.user_id = u.id
-            WHERE u.email = $1`,
-            [email]
-        );
-
+        const result = await selectRegister.emailPlus(email);
         const user = result.rows[0];
 
         if (!user) {
@@ -141,7 +101,6 @@ const postLogin = async (req, res) => {
         }
 
         const isMatch = await bcrypt.compare(password, user.password_hash);
-
         if (!isMatch) {
             return res.status(401).json({
                 error: 'Неверный email или пароль'
