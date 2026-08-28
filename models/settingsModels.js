@@ -1,11 +1,15 @@
-const express = require('express');
 const pool = require('../db');
-const client = pool.connect();
 
 async function registrationEnabled(data) {
-    return await client.query(
-        'SELECT registration_enabled FROM system_settings WHERE id = 1'
-    );
-};
+    const client = await pool.connect(); 
+    try {
+        const result = await client.query(
+            'SELECT registration_enabled FROM system_settings WHERE id = 1'
+        );
+        return result;
+    } finally {
+        client.release();
+    }
+}
 
-module.exports = { registrationEnabled, };
+module.exports = { registrationEnabled };
