@@ -1,4 +1,5 @@
 const pool = require('../db');
+const client = pool.connect();
 const bcrypt = require('bcrypt');
 const settings = require('../models/settingsModels');
 const selectRegister = require('../models/selectRegisterModels');
