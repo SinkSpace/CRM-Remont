@@ -41,7 +41,7 @@ const postRegister = async (req, res) => {
 
         const companyResult = await insertRegister.companies(shop_name, display_name);
         const company = companyResult.rows[0];
-        
+
         const passwordHash = await bcrypt.hash(password, 10);
         const userResult = await insertRegister.users(email, passwordHash, company.id);
         const user = userResult.rows[0];

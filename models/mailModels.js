@@ -24,4 +24,4 @@ async function sendRegisterEmail(data) {
     });
 }
 
-module.exports = sendRegisterEmail;
+module.exports = { sendRegisterEmail };
