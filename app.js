@@ -16,9 +16,9 @@ const nodemailer = require('nodemailer');
 const templatesDir = path.join(__dirname, 'uploads', 'templates');
 const generatedDir = path.join(__dirname, 'uploads', 'generated');
 
-app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true })); 
+/******** MIDDLEWARE *********/
+const { configureMiddleware } = require('./middleware/middleware');
+configureMiddleware(app);
 
 /******** НАСТРОЙКИ *********/
 const storage = multer.diskStorage({
