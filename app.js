@@ -71,6 +71,8 @@ app.use('/', pageRoutes);
 
 const orderRoutes = require('./routes/orderRoutes');
 
+app.use('/', orderRoutes);
+
 /******** Архивация *********/
 
 const archiveRoutes = require('./routes/archiveRoutes');
