@@ -30,5 +30,21 @@ async function emailPlus(data) {
     )
 };
 
-module.exports = { email, emailPlus };
+async function user(data) {
+    user = data;
+    return await pool.query(
+        'SELECT company_id FROM users WHERE id = $1',
+    [user]);
+}
+
+async function userPlus(data) {
+    user = data;
+    return await pool.query(
+        `SELECT display_name, shop_name, city, address, phone
+            FROM user_profiles
+            WHERE user_id = $1`,
+        [user]);
+}
+
+module.exports = { email, emailPlus, user, userPlus };
 

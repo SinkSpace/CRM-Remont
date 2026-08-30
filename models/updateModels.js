@@ -98,4 +98,42 @@ async function companies(data) {
     return result;
 }
 
-module.exports = { orders, archived, companies };
+async function companiesJSON(data) {
+    const { start, end, company } = data;
+    return await pool.query(
+        `UPDATE companies
+        SET work_days = $1::jsonb,
+            work_time_start = $2,
+            work_time_end = $3
+        WHERE id = $4`,
+        [
+            JSON.stringify(Array.isArray(work_days) ? work_days : []),
+            start || null,
+            end || null,
+            company
+        ]);
+}
+
+async function user(data) {
+    const { display, shop, city, address, phone, user } = data;
+    return await pool.query(
+        `UPDATE user_profiles
+            SET display_name = $1,
+                shop_name = $2,
+                city = $3,
+                address = $4,
+                phone = $5
+            WHERE user_id = $6
+            RETURNING id, user_id, company_id, display_name, shop_name, city, address, phone, avatar_url, created_at`,
+            [
+                display,
+                shop || null,
+                city || null,
+                address || null,
+                phone || null,
+                user
+            ]
+    );
+};
+
+module.exports = { orders, archived, companies, companiesJSON, user };
