@@ -40,16 +40,18 @@ const postRegister = async (req, res) => {
             return res.status(409).json({ error: 'Пользователь с таким email уже существует' });
         }
 
-        const companyResult = await insertRegister.companies(shop_name, display_name);
+        const companyResult = await insertRegister.companies({shop_name, display_name});
         const company = companyResult.rows[0];
 
         const passwordHash = await bcrypt.hash(password, 10);
-        const userResult = await insertRegister.users(email, passwordHash, company.id);
+        const company_id = company.id;
+        const userResult = await insertRegister.users({email, passwordHash, company_id});
         const user = userResult.rows[0];
+        const user_id = user.id;
 
-        await insertRegister.userProfiles(user.id, company.id, display_name, shop_name, phone);
+        await insertRegister.userProfiles({user_id, company_id, display_name, shop_name, phone});
 
-        await update.companies(user.id, company.id);
+        await update.companies({user_id, company_id});
 
         await client.query('COMMIT');
 

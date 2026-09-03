@@ -1,4 +1,3 @@
-const get = require('../controllers/archiveController');
 const express = require('express');
 const reg = require('../controllers/registerController');
 const router = express.Router();

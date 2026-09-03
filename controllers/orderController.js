@@ -37,8 +37,8 @@ const postOrders = async (req, res) => {
             return res.status(400).json({ error: 'user_id required' }); //если пользователь не авторизован
         }
 
-        await upsertModels.upsertContact(company_id, customer, phone);
-        await upsertModels.upsertDevice(company_id, user_id, device);
+        await upsertModels.upsertContact({company_id, customer, phone});
+        await upsertModels.upsertDevice({company_id, user_id, device});
 
         const result = await query(req.body);
 
@@ -123,14 +123,14 @@ const getID = async (req, res) => {
             return res.status(400).json({ error: 'company_id required' });
         }
 
-        const beforeResult = await beforeModels.order(id, company_id);
+        const beforeResult = await beforeModels.order({id, company_id});
 
         const before = beforeResult.rows[0];
 
-        await upsertContact(company_id, customer, phone);
-        await upsertDevice(company_id, user_id, device);
+        await upsertContact({company_id, customer, phone});
+        await upsertDevice({company_id, user_id, device});
 
-        const result = await update.orders(phone, customer, worker, device, model, SN, status, price, pre, acceptDate, deadline, crush, note, id, company_id);
+        const result = await update.orders({phone, customer, worker, device, model, SN, status, price, pre, acceptDate, deadline, crush, note, id, company_id});
 
         const updatedOrder = result.rows[0];
 
@@ -163,7 +163,7 @@ const getArchiveID = async (req, res) => {
             return res.status(400).json({ error: 'company_id required' });
         }
 
-        const beforeResult = await beforeModels.worker(id, company_id);
+        const beforeResult = await beforeModels.worker({id, company_id});
 
         const before = beforeResult.rows[0];
 
@@ -171,7 +171,7 @@ const getArchiveID = async (req, res) => {
             return res.status(404).json({ error: 'Заказ не найден' });
         }
 
-        const result = await update.archived(id, company_id)
+        const result = await update.archived({id, company_id});
 
         await writeLog({
             company_id,

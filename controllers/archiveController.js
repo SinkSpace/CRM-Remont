@@ -25,7 +25,7 @@ const unarchive = async (req, res) => {
             return res.status(400).json({ error: 'company_id required' });
         }
 
-        const beforeResult = await beforeModels.worker(id, company_id);
+        const beforeResult = await beforeModels.worker({id, company_id});
 
         const before = beforeResult.rows[0];
 
@@ -33,7 +33,7 @@ const unarchive = async (req, res) => {
             return res.status(404).json({ error: 'Заказ не найден' });
         }
 
-        const result = await updateModels.archived(id, company_id);
+        const result = await updateModels.archived({id, company_id});
 
         await writeLog({
             company_id,

@@ -136,4 +136,38 @@ async function user(data) {
     );
 };
 
-module.exports = { orders, archived, companies, companiesJSON, user };
+async function worker(data) {
+    const { name, role, phone, email, is_active, id, company } = data;
+    return await pool.query(
+        `UPDATE workers
+             SET name = $1,
+                 role = $2,
+                 phone = $3,
+                 email = $4,
+                 is_active = $5,
+                 updated_at = NOW()
+             WHERE id = $6 AND company_id = $7
+             RETURNING
+                id,
+                user_id,
+                company_id,
+                name,
+                role,
+                phone,
+                email,
+                is_active,
+                created_at,
+                updated_at`,
+            [
+                name.trim(),
+                role || 'Сотрудник',
+                phone || null,
+                email || null,
+                Boolean(is_active),
+                id,
+                company
+            ]
+    )
+}
+
+module.exports = { orders, archived, companies, companiesJSON, user, worker };
