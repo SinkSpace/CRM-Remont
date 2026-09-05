@@ -78,7 +78,7 @@ async function archived(data) {
         `UPDATE orders
          SET is_archived = true,
              archived_at = NOW()
-         WHERE id = $1 AND+ company_id = $2
+         WHERE id = $1 AND company_id = $2
          RETURNING *`,
         [id, company_id]
     );
@@ -107,14 +107,14 @@ async function companiesJSON(data) {
             work_time_end = $3
         WHERE id = $4`,
         [
-            JSON.stringify(Array.isArray(days) ? work_days : []),
+            JSON.stringify(Array.isArray(wprk_days) ? work_days : []),
             work_time_start || null,
             work_time_end || null,
             company_id
         ]);
 }
 
-async function user_id(data) {
+async function user(data) {
     const { display_name, shop_name, city, address, phone, user_id } = data;
     return await pool.query(
         `UPDATE user_profiles

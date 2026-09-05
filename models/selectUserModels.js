@@ -2,7 +2,7 @@ const express = require('express');
 const pool = require('../db');
 
 async function query(data) {
-    user_id = data;
+    const user_id = data;
     return await pool.query(
         `SELECT 
             u.id,

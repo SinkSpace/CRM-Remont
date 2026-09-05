@@ -8,7 +8,7 @@ const PizZip = require('pizzip');
 const bwipjs = require('bwip-js');
 const Docxtemplater = require('docxtemplater');
 const path = require('path');
-const generatedDir = path.join(__dirname, 'uploads', 'generated');
+const generatedDir = path.join(__dirname, '..', 'uploads', 'generated');
 
 const post = async (req, res) => {
     try {
@@ -33,7 +33,7 @@ const get = async (req, res) => {
         const companyId = Number(req.params.companyId);
         const type = req.query.type || null;
 
-        const result = await DESC.document({companyId, type});
+        const result = await DESC.document({company_id: companyId, type});
 
         res.json(result.rows);
     } catch (error) {

@@ -21,11 +21,14 @@ const get = async (req, res) => {
             'Отменён'
         ];
 
-        if (existing.rows.length > 0) return;
+        if (existing.rows.length > 0) {
+            const result = await selectASC.statuses(companyId);
+            return res.json(result.rows);
+        };
 
         for (const name of DEFAULT_STATUSES) {
             await insert({user_id, companyId, name});
-        }
+        };
 
         await worker.startAdmin(companyId);
         await worker.startManager(companyId);

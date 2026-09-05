@@ -2,7 +2,7 @@ const express = require('express');
 const pool = require('../db');
 
 async function devices(data) {
-    company_id = data;
+    const company_id = data;
     return await pool.query(
         `SELECT id, user_id, company_id, name, is_active, created_at
              FROM devices
@@ -12,7 +12,7 @@ async function devices(data) {
 };
 
 async function statuses(data) {
-    company_id = data;
+    const company_id = data;
     return await pool.query(
         `SELECT id, user_id, company_id, name, created_at
              FROM statuses

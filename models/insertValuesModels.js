@@ -29,11 +29,11 @@ async function document(data) {
 }
 
 async function generate(data) {
-    const { company_id, order, template, user_id, output } = data;
+    const { company_id, order_id, template_id, user_id, outputPath } = data;
     return await pool.query(
         `INSERT INTO generated_documents (company_id, order_id, template_id, created_by, file_path)
              VALUES ($1, $2, $3, $4, $5)`,
-        [company_id, order, template, user_id || null, output]
+        [company_id, order_id, template_id, user_id || null, outputPath]
     )
 }
 

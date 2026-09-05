@@ -1,4 +1,3 @@
-const path = require('path');
 const query = require('../models/orderModels');
 const selectOrderModels = require('../models/selectOrderModels');
 const selectAllOrderModels = require('../models/selectAllOrderModels');
