@@ -2,7 +2,6 @@ process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 const axios = require("axios");
 const qs = require("qs");
 const { v4: uuidv4 } = require("uuid");
-const { env } = require('process');
 const dotenv = require('dotenv');
 const select = require('../models/selectAIModels');
 
@@ -91,7 +90,7 @@ const query = async (req, res) => {
 
 const settings = async (req, res) => {
     try {
-        const result = select();
+        const result = await select();
 
         res.json(result.rows[0] || {});
     } catch (error) {

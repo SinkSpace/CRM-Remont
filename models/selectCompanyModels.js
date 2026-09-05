@@ -2,7 +2,7 @@ const express = require('express');
 const pool = require('../db');
 
 async function company(data) {
-    company = data;
+    company_id = data;
     return await pool.query(
         `SELECT
             id,
@@ -18,14 +18,14 @@ async function company(data) {
             FROM workers
             WHERE company_id = $1
         ORDER BY id ASC`,
-        [company]);
+        [company_id]);
 };
 
 async function id(data) {
-    const { id, company } = data;
+    const { id, company_id } = data;
     return await pool.query(
         'SELECT id FROM workers WHERE id = $1 AND company_id = $2',
-            [id, company]
+            [id, company_id]
     )
 }
 

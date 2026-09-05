@@ -3,13 +3,13 @@ const selectASC = require('../models/selectASCModels');
 const insert = require('../models/insertStatusesModels');
 const worker = require('../models/insertWorkerModels');
 const values = require('../models/insertValuesModels');
-const del = require('../models/deleteModels');
+const deleteModels = require('../models/deleteModels');
 
 const get = async (req, res) => {
     try {
         const companyId = Number(req.params.companyId);
 
-        const existing = await select(company_id);
+        const existing = await select(companyId);
 
         const DEFAULT_STATUSES = [
             'Принят',
@@ -24,12 +24,12 @@ const get = async (req, res) => {
         if (existing.rows.length > 0) return;
 
         for (const name of DEFAULT_STATUSES) {
-            insert({user_id, company_id, name});
+            await insert({user_id, companyId, name});
         }
 
-        worker.startAdmin(company_id);
-        worker.startManager(company_id);
-        worker.startWorker(company_id);
+        await worker.startAdmin(companyId);
+        await worker.startManager(companyId);
+        await worker.startWorker(companyId);
 
         const result = await selectASC.statuses(companyId);
 
@@ -74,7 +74,7 @@ const del = async (req, res) => {
             return res.status(400).json({ error: 'company_id обязателен' });
         }
 
-        const result = await del.statuses({id, company_id});
+        const result = await deleteModels.statuses({id, company_id});
 
         if (!result.rows[0]) {
             return res.status(404).json({

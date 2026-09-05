@@ -11,4 +11,4 @@ router.get('/stats/workers/day', get.day);
 /* 10.3 Статистика по сотрудникам за месяц */
 router.get('/stats/workers/month', get.month);
 
-module.exports = { total, day, month };
+module.exports = router;

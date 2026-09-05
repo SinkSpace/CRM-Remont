@@ -1,4 +1,4 @@
-const del = require('../models/deleteModels');
+const deleteModels = require('../models/deleteModels');
 const DESC = require('../models/selectDESCModels');
 const select = require('../models/selectDocumentModels');
 const values = require('../models/insertValuesModels');
@@ -47,7 +47,7 @@ const del = async (req, res) => {
         const id = Number(req.params.id);
         const { company_id } = req.body;
 
-        const result = await del.document({id, company_id});
+        const result = await deleteModels.document({id, company_id});
 
         if (!result.rows[0]) {
             return res.status(404).json({ error: 'Шаблон не найден' });

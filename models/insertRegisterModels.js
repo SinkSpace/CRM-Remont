@@ -11,22 +11,22 @@ async function companies(data) {
 }
 
 async function users(data) {
-    const { email, hash, company } = data;
+    const { email, hash, company_id } = data;
     return await pool.query(
         `INSERT INTO users (email, password_hash, role, company_id)
          VALUES ($1, $2, $3, $4)
          RETURNING id, email, role, company_id`,
-        [email, hash, 'master', company]
+        [email, hash, 'master', company_id]
     );
 }
 
 async function userProfiles(data) {
-    const { user, company, display, shop, phone } = data;
+    const { user_id, company_id, display, shop, phone } = data;
     return await pool.query(
         `INSERT INTO user_profiles (user_id, company_id, display_name, shop_name, phone)
          VALUES ($1, $2, $3, $4, $5)
          RETURNING *`,
-        [user, company, display, shop || null, phone || null]
+        [user_id, company_id, display, shop || null, phone || null]
     );
 }
 

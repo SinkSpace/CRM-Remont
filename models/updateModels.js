@@ -73,33 +73,33 @@ async function orders(data) {
 }
 
 async function archived(data) {
-    const { id, company } = data;
+    const { id, company_id } = data;
     const result = await pool.query(
         `UPDATE orders
          SET is_archived = true,
              archived_at = NOW()
-         WHERE id = $1 AND company_id = $2
+         WHERE id = $1 AND+ company_id = $2
          RETURNING *`,
-        [id, company]
+        [id, company_id]
     );
 
     return result;
 }
 
 async function companies(data) {
-    const { user, company } = data;
+    const { user_id, company_id } = data;
     const result = await pool.query( 
         `UPDATE companies
          SET owner_user_id = $1
          WHERE id = $2
          RETURNING *`, 
-        [user, company]
+        [user_id, company_id]
     );
     return result;
 }
 
 async function companiesJSON(data) {
-    const { start, end, company, days } = data;
+    const { work_time_start, work_time_end, company_id, work_days } = data;
     return await pool.query(
         `UPDATE companies
         SET work_days = $1::jsonb,
@@ -107,15 +107,15 @@ async function companiesJSON(data) {
             work_time_end = $3
         WHERE id = $4`,
         [
-            JSON.stringify(Array.isArray(days) ? days : []),
-            start || null,
-            end || null,
-            company
+            JSON.stringify(Array.isArray(days) ? work_days : []),
+            work_time_start || null,
+            work_time_end || null,
+            company_id
         ]);
 }
 
-async function user(data) {
-    const { display, shop, city, address, phone, user } = data;
+async function user_id(data) {
+    const { display_name, shop_name, city, address, phone, user_id } = data;
     return await pool.query(
         `UPDATE user_profiles
             SET display_name = $1,
@@ -126,18 +126,18 @@ async function user(data) {
             WHERE user_id = $6
             RETURNING id, user_id, company_id, display_name, shop_name, city, address, phone, avatar_url, created_at`,
             [
-                display,
-                shop || null,
+                display_name,
+                shop_name || null,
                 city || null,
                 address || null,
                 phone || null,
-                user
+                user_id
             ]
     );
 };
 
 async function worker(data) {
-    const { name, role, phone, email, is_active, id, company } = data;
+    const { name, role, phone, email, is_active, id, company_id } = data;
     return await pool.query(
         `UPDATE workers
              SET name = $1,
@@ -165,9 +165,9 @@ async function worker(data) {
                 email || null,
                 Boolean(is_active),
                 id,
-                company
+                company_id
             ]
     )
 }
 
-module.exports = { orders, archived, companies, companiesJSON, user, worker };
+module.exports = { orders, archived, companies, companiesJSON, user_id, worker };

@@ -1,6 +1,5 @@
 const path = require('path');
 const query = require('../models/orderModels');
-const upsertModels = require('../models/upsertModels');
 const selectOrderModels = require('../models/selectOrderModels');
 const selectAllOrderModels = require('../models/selectAllOrderModels');
 const writeLog = require('../models/writeLog');
@@ -127,8 +126,8 @@ const getID = async (req, res) => {
 
         const before = beforeResult.rows[0];
 
-        await upsertContact({company_id, customer, phone});
-        await upsertDevice({company_id, user_id, device});
+        await upsert.upsertContact({company_id, customer, phone});
+        await upsert.upsertDevice({company_id, user_id, name: device});
 
         const result = await update.orders({phone, customer, worker, device, model, SN, status, price, pre, acceptDate, deadline, crush, note, id, company_id});
 

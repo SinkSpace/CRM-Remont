@@ -1,8 +1,7 @@
-const express = require('express');
 const pool = require('../db');
 
 async function upsertContact(data) {
-    const { company, customer, phone } = data;
+    const { company_id, customer, phone } = data;
     const phone_normalized = String(phone).replace(/\D/g, '');;
 
     if (!customer || !phone_normalized) return null;
@@ -11,7 +10,7 @@ async function upsertContact(data) {
         `SELECT id
          FROM contacts
          WHERE company_id = $1 AND phone_normalized = $2`,
-        [company, phone_normalized]
+        [company_id, phone_normalized]
     );
 
     if (existing.rows[0]) {
@@ -32,14 +31,14 @@ async function upsertContact(data) {
         `INSERT INTO contacts (company_id, customer_name, phone, phone_normalized)
          VALUES ($1, $2, $3, $4)
          RETURNING *`,
-        [company_id, customer_name, phone, phone_normalized]
+        [company_id, customer, phone, phone_normalized]
     );
 
     return result.rows[0];
 }
 
 async function upsertDevice(data) {
-    const { company, user, name } = data;
+    const { company_id, user_id, name } = data;
     const trimmed = String(name || '').trim();
     if (!trimmed) return null;
 
@@ -49,7 +48,7 @@ async function upsertDevice(data) {
          WHERE company_id = $1
            AND LOWER(name) = LOWER($2)
          LIMIT 1`,
-        [company, trimmed]
+        [company_id, trimmed]
     );
 
     if (existing.rows[0]) return existing.rows[0];
@@ -58,7 +57,7 @@ async function upsertDevice(data) {
         `INSERT INTO devices (company_id, user_id, name)
          VALUES ($1, $2, $3)
          RETURNING *`,
-        [company, user || null, trimmed]
+        [company_id, user_id || null, trimmed]
     );
 
     return result.rows[0];

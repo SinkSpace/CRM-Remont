@@ -1,7 +1,7 @@
 const pool = require('../db');
 
 async function query(data) {
-    const company = data;
+    const company_id = data;
     return await pool.query(
         `SELECT
             l.id,
@@ -19,7 +19,7 @@ async function query(data) {
         LEFT JOIN user_profiles p ON p.user_id = l.user_id
         WHERE l.company_id = $1
         ORDER BY l.created_at DESC, l.id DESC`,
-        [company]
+        [company_id]
     );
 }
 

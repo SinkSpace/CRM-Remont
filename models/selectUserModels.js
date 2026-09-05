@@ -2,7 +2,7 @@ const express = require('express');
 const pool = require('../db');
 
 async function query(data) {
-    user = data;
+    user_id = data;
     return await pool.query(
         `SELECT 
             u.id,
@@ -20,7 +20,7 @@ async function query(data) {
         LEFT JOIN user_profiles p ON p.user_id = u.id
         LEFT JOIN companies c ON c.id = u.company_id
         WHERE u.id = $1`,
-        [user]);
+        [user_id]);
 };
 
 module.exports = query;
