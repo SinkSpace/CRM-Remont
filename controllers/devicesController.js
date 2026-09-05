@@ -1,6 +1,6 @@
 const select = require('../models/selectASCModels');
 const insert = require('../models/insertValuesModels');
-const del = require('../models/deleteModels');
+const deleteModels = require('../models/deleteModels');
 
 const get = async (req, res) => {
     try {
@@ -49,7 +49,7 @@ const del = async (req, res) => {
             return res.status(400).json({ error: 'company_id обязателен' });
         }
 
-        const result = await del.devices({id, company_id});
+        const result = await deleteModels.devices({id, company_id});
 
         if (!result.rows[0]) {
             return res.status(404).json({

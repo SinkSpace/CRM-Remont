@@ -29,4 +29,4 @@ async function writeLog({
     }
 }
 
-module.exports = { writeLog };
+module.exports = writeLog;

@@ -2,8 +2,8 @@ const get = require('../controllers/AIController');
 const express = require('express');
 const router = express.Router();
 
-router.post('/chat', get.chat);
+router.post('/chat', get.query);
 
-app.get('/api/ai/settings', get.settings);
+router.get('/api/ai/settings', get.settings);
 
 module.exports = router;

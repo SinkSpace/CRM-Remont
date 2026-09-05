@@ -19,8 +19,4 @@ async function monthCoalesce(data) {
         [company, date]);
 }
 
-async function dayDESC(data) {
-    const { company, date } = data;
-}
-
-module.exports = { dayCoalesce, monthCoalesce, dayDESC };
+module.exports = { dayCoalesce, monthCoalesce, };

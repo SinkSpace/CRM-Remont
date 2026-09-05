@@ -57,7 +57,7 @@ const putProfile = async (req, res) => {
 
         const result = await update.user({display_name, shop_name, city, address, phone, userId});
 
-        await update.companiesJSON({work_time_start, work_time_end, company_id});
+        await update.companiesJSON({work_time_start, work_time_end, company_id, work_days});
 
         const profile = result.rows[0];
 

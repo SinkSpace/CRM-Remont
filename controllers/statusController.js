@@ -11,6 +11,16 @@ const get = async (req, res) => {
 
         const existing = await select(company_id);
 
+        const DEFAULT_STATUSES = [
+            'Принят',
+            'В работе',
+            'Ждёт запчастей',
+            'На согласовании',
+            'Без ремонта',
+            'Сделан',
+            'Отменён'
+        ];
+
         if (existing.rows.length > 0) return;
 
         for (const name of DEFAULT_STATUSES) {

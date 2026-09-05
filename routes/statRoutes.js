@@ -1,12 +1,14 @@
 const get = require('../controllers/statConroller');
+const express = require('express');
+const router = express.Router();
 
 /* 10.1 Общая статистика */
-app.get('/stats', get.total);
+router.get('/stats', get.total);
 
 /* 10.2 Статистика по сотрудникам за день */
-app.get('/stats/workers/day', get.day);
+router.get('/stats/workers/day', get.day);
 
 /* 10.3 Статистика по сотрудникам за месяц */
-app.get('/stats/workers/month', get.month);
+router.get('/stats/workers/month', get.month);
 
 module.exports = { total, day, month };

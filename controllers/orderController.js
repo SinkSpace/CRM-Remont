@@ -6,7 +6,7 @@ const selectAllOrderModels = require('../models/selectAllOrderModels');
 const writeLog = require('../models/writeLog');
 const beforeModels = require('../models/beforeModels');
 const update = require('../models/updateModels');
-const pool = require('../db');
+const upsert = require('../models/upsertModels');
 
 /* 1. Создание заказа */
 const postOrders = async (req, res) => {
@@ -37,14 +37,14 @@ const postOrders = async (req, res) => {
             return res.status(400).json({ error: 'user_id required' }); //если пользователь не авторизован
         }
 
-        await upsertModels.upsertContact({company_id, customer, phone});
-        await upsertModels.upsertDevice({company_id, user_id, device});
+        await upsert.upsertContact({company_id, customer, phone});
+        await upsert.upsertDevice({company_id, user_id, device});
 
         const result = await query(req.body);
 
         const order = result.rows[0];
 
-        await writeLog.writeLog({
+        await writeLog({
             company_id,
             user_id,
             entity_type: 'order',

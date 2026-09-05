@@ -73,14 +73,14 @@ async function orders(data) {
 }
 
 async function archived(data) {
-    const { id, company_id } = data;
+    const { id, company } = data;
     const result = await pool.query(
         `UPDATE orders
          SET is_archived = true,
              archived_at = NOW()
          WHERE id = $1 AND company_id = $2
          RETURNING *`,
-        [id, company_id]
+        [id, company]
     );
 
     return result;
@@ -99,7 +99,7 @@ async function companies(data) {
 }
 
 async function companiesJSON(data) {
-    const { start, end, company } = data;
+    const { start, end, company, days } = data;
     return await pool.query(
         `UPDATE companies
         SET work_days = $1::jsonb,
@@ -107,7 +107,7 @@ async function companiesJSON(data) {
             work_time_end = $3
         WHERE id = $4`,
         [
-            JSON.stringify(Array.isArray(work_days) ? work_days : []),
+            JSON.stringify(Array.isArray(days) ? days : []),
             start || null,
             end || null,
             company

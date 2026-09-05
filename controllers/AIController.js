@@ -3,11 +3,10 @@ const axios = require("axios");
 const qs = require("qs");
 const { v4: uuidv4 } = require("uuid");
 const { env } = require('process');
+const dotenv = require('dotenv');
 const select = require('../models/selectAIModels');
 
 dotenv.config();
-
-app.use(express.static("public"));
 
 const OAUTH_URL =
   "https://ngw.devices.sberbank.ru:9443/api/v2/oauth";
@@ -69,7 +68,7 @@ async function chat(token, message) {
     return res.data;
 }
 
-const chat = async (req, res) => {
+const query = async (req, res) => {
   try {
     const { message } = req.body;
 
@@ -100,4 +99,4 @@ const settings = async (req, res) => {
     }
 };
 
-module.exports = { chat, settings };
+module.exports = { query, settings };

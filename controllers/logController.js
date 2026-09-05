@@ -1,4 +1,4 @@
-const select = require();
+const select = require('../models/selectLogModels');
 
 const get = async (req, res) => {
     try {

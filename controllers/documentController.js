@@ -8,16 +8,17 @@ const PizZip = require('pizzip');
 const bwipjs = require('bwip-js');
 const Docxtemplater = require('docxtemplater');
 const path = require('path');
+const generatedDir = path.join(__dirname, 'uploads', 'generated');
 
 const post = async (req, res) => {
     try {
         const { company_id, user_id, name, type } = req.body;
-        const originalName = Buffer.from(req.file.originalname, 'latin1').toString('utf8');
-
+        
         if (!company_id || !name || !req.file) {
             return res.status(400).json({ error: 'company_id, name и template обязательны' });
         }
 
+        const originalName = Buffer.from(req.file.originalname, 'latin1').toString('utf8');
         const result = await values.document(company_id, user_id, name, req.file.path, originalName, type);
 
         res.status(201).json(result.rows[0]);

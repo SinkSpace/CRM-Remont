@@ -1,21 +1,15 @@
-/******** ПОДКЛЮЧЕНИЕ *********/
+/******** Подключение *********/
 const express = require('express'); /* подключение express */
 const path = require('path');
-const pool = require('./db'); /* подключение БД */
 const app = express(); /* создание веб-приложения */
 const fs = require('fs');
-const multer = require('multer');
-const bwipjs = require('bwip-js');
-const dotenv = require('dotenv');
-
 const templatesDir = path.join(__dirname, 'uploads', 'templates');
-const generatedDir = path.join(__dirname, 'uploads', 'generated');
 
-/******** MIDDLEWARE *********/
+/******** Middleware *********/
 const { configureMiddleware } = require('./middleware/middleware');
 configureMiddleware(app);
 
-/******** СОЗДАНИЕ ПАПОК *********/
+/******** Создание папок *********/
 fs.mkdirSync(templatesDir, { recursive: true });
 fs.mkdirSync(generatedDir, { recursive: true });
 
@@ -97,12 +91,12 @@ const AIRoutes = require('./routes/AIRoutes');
 
 app.use('/', AIRoutes);
 
-/******** ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ *********/
+/******** Админ-панель *********/
 
 const adminRoutes = require('./routes/adminRoutes');
 
-app.use('/'. adminRoutes);
+app.use('/', adminRoutes);
 
-/******** ЗАПУСК СЕРВЕРА *********/
+/******** Запуск сервера *********/
 
 module.exports = app;

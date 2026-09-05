@@ -30,4 +30,33 @@ async function document(data) {
     );
 }
 
-module.exports = { contact, document };
+async function stat(data) {
+    const { company, date } = data;
+    return await pool.query(
+        `SELECT 
+            COALESCE(worker, 'Без сотрудника') AS name,
+            COALESCE(SUM(price), 0) AS income,
+            COUNT(*) AS orders_count
+        FROM orders
+        WHERE company_id = $1 AND DATE(created_at) = $2
+        GROUP BY worker
+        ORDER BY income DESC`, [company, date]
+    );
+}
+
+async function statDate(data) {
+    const { company, date } = data;
+    return await pool.query(
+        `SELECT 
+            COALESCE(worker, 'Без сотрудника') AS name,
+            COALESCE(SUM(price), 0) AS income,
+            COUNT(*) AS orders_count
+        FROM orders
+        WHERE company_id = $1 
+          AND DATE_TRUNC('month', created_at) = DATE_TRUNC('month', $2::date)
+        GROUP BY worker
+        ORDER BY income DESC`, [company, date]
+    );
+}
+
+module.exports = { contact, document, stat, statDate };
