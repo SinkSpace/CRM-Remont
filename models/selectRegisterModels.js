@@ -30,7 +30,7 @@ async function emailPlus(data) {
     )
 };
 
-async function user_id(data) {
+async function user(data) {
     const user_id = data;
     return await pool.query(
         'SELECT company_id FROM users WHERE id = $1',
@@ -46,5 +46,5 @@ async function userPlus(data) {
         [user_id]);
 }
 
-module.exports = { email, emailPlus, user_id, userPlus };
+module.exports = { email, emailPlus, user, userPlus };
 

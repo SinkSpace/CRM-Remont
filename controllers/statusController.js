@@ -30,10 +30,6 @@ const get = async (req, res) => {
             await insert({user_id: null, company_id: companyId, name});
         };
 
-        await worker.startAdmin(company_id);
-        await worker.startManager(company_id);
-        await worker.startWorker(company_id);
-
         const result = await selectASC.statuses(companyId);
 
         res.json(result.rows);
