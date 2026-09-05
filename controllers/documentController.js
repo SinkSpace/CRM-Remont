@@ -19,7 +19,8 @@ const post = async (req, res) => {
         }
 
         const originalName = Buffer.from(req.file.originalname, 'latin1').toString('utf8');
-        const result = await values.document(company_id, user_id, name, req.file.path, originalName, type);
+        const reqFile = req.file.path;
+        const result = await values.document({company_id, user_id, name, file_path, originalName, type});
 
         res.status(201).json(result.rows[0]);
     } catch (error) {

@@ -27,12 +27,12 @@ const get = async (req, res) => {
         };
 
         for (const name of DEFAULT_STATUSES) {
-            await insert({user_id, companyId, name});
+            await insert({user_id: null, company_id: companyId, name});
         };
 
-        await worker.startAdmin(companyId);
-        await worker.startManager(companyId);
-        await worker.startWorker(companyId);
+        await worker.startAdmin(company_id);
+        await worker.startManager(company_id);
+        await worker.startWorker(company_id);
 
         const result = await selectASC.statuses(companyId);
 

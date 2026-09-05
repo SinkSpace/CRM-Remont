@@ -107,7 +107,7 @@ async function companiesJSON(data) {
             work_time_end = $3
         WHERE id = $4`,
         [
-            JSON.stringify(Array.isArray(wprk_days) ? work_days : []),
+            JSON.stringify(Array.isArray(work_days) ? work_days : []),
             work_time_start || null,
             work_time_end || null,
             company_id
@@ -170,4 +170,4 @@ async function worker(data) {
     )
 }
 
-module.exports = { orders, archived, companies, companiesJSON, user_id, worker };
+module.exports = { orders, archived, companies, companiesJSON, user, worker };

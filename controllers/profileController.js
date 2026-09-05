@@ -5,9 +5,9 @@ const writeLog = require('../models/writeLog');
 
 const getProfile = async (req, res) => {
     try {
-        const userId = req.params.id;
+        const user_id = req.params.id;
 
-        const result = await profile(userId);
+        const result = await profile(user_id);
 
         const user = result.rows[0];
 
@@ -25,7 +25,7 @@ const getProfile = async (req, res) => {
 
 const putProfile = async (req, res) => {
     try {
-        const userId = Number(req.params.id);
+        const user_id = Number(req.params.id);
         const {
             display_name,
             shop_name,
@@ -43,7 +43,7 @@ const putProfile = async (req, res) => {
             });
         }
 
-        const userResult = await register.user(userId);
+        const userResult = await register.user(user_id);
 
         if (userResult.rows.length === 0) {
             return res.status(404).json({ error: 'Пользователь не найден' });
@@ -51,13 +51,13 @@ const putProfile = async (req, res) => {
 
         const company_id = userResult.rows[0].company_id;
 
-        const beforeResult = await register.userPlus(userId);
+        const beforeResult = await register.userPlus(user_id);
 
         const before = beforeResult.rows[0];
 
-        const result = await update.user({display_name, shop_name, city, address, phone, userId});
+        const result = await update.user({display_name, shop_name, city, address, phone, user_id});
 
-        await update.companiesJSON({work_time_start, work_time_end, company_id, work_days});
+        await update.companiesJSON({work_days, work_time_start, work_time_end, company_id, work_days});
 
         const profile = result.rows[0];
 
@@ -69,7 +69,7 @@ const putProfile = async (req, res) => {
 
         await writeLog({
             company_id,
-            user_id: userId,
+            user_id,
             entity_type: 'profile',
             entity_id: profile.id,
             action: 'update',

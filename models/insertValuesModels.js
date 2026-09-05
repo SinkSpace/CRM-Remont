@@ -19,12 +19,12 @@ async function statuses(data) {
 };
 
 async function document(data) {
-    const { company_id, user_id, name, file, original, type} = data;
+    const { company_id, user_id, name, file_path, originalName, type} = data;
     return await pool.query(
         `INSERT INTO document_templates (company_id, user_id, name, file_path, original_name, type)
              VALUES ($1, $2, $3, $4, $5, $6)
              RETURNING *`,
-        [company_id, user_id || null, name.trim(), file, original, type || 'act']
+        [company_id, user_id || null, name.trim(), file_path, originalName, type || 'act']
     );
 }
 
