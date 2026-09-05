@@ -26,7 +26,7 @@ const postWorkers = async (req, res) => {
             });
         }
 
-        const result = await worker({user_id, company_id, name, role, phone, email});
+        const result = await worker.query({user_id, company_id, name, role, phone, email});
 
         res.status(201).json(result.rows[0]);
     } catch (error) {

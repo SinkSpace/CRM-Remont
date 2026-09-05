@@ -1,19 +1,27 @@
-const express = require('express');
-const router = express.Router();
+const select = require('../models/selectStatusModels');
+const selectASC = require('../models/selectASCModels');
+const insert = require('../models/insertStatusesModels');
+const worker = require('../models/insertWorkerModels');
+const values = require('../models/insertValuesModels');
+const del = require('../models/deleteModels');
 
 const get = async (req, res) => {
     try {
         const companyId = Number(req.params.companyId);
 
-        await ensureDefaultStatuses(companyId);
+        const existing = await select(company_id);
 
-        const result = await pool.query(
-            `SELECT id, user_id, company_id, name, created_at
-             FROM statuses
-             WHERE company_id = $1
-             ORDER BY id ASC`,
-            [companyId]
-        );
+        if (existing.rows.length > 0) return;
+
+        for (const name of DEFAULT_STATUSES) {
+            insert({user_id, company_id, name});
+        }
+
+        worker.startAdmin(company_id);
+        worker.startManager(company_id);
+        worker.startWorker(company_id);
+
+        const result = await selectASC.statuses(companyId);
 
         res.json(result.rows);
     } catch (error) {
@@ -32,12 +40,7 @@ const post = async (req, res) => {
             });
         }
 
-        const result = await pool.query(
-            `INSERT INTO statuses (user_id, company_id, name)
-             VALUES ($1, $2, $3)
-             RETURNING id, user_id, company_id, name, created_at`,
-            [user_id || null, company_id, name.trim()]
-        );
+        const result = await values.statuses({user_id, company_id, name});
 
         res.status(201).json(result.rows[0]);
     } catch (error) {
@@ -61,10 +64,7 @@ const del = async (req, res) => {
             return res.status(400).json({ error: 'company_id обязателен' });
         }
 
-        const result = await pool.query(
-            'DELETE FROM statuses WHERE id = $1 AND company_id = $2 RETURNING id',
-            [id, company_id]
-        );
+        const result = await del.statuses({id, company_id});
 
         if (!result.rows[0]) {
             return res.status(404).json({
@@ -78,101 +78,5 @@ const del = async (req, res) => {
         res.status(500).json({ error: 'Ошибка сервера' });
     }
 };
-
-async function ensureDefaultStatuses(company_id, user_id = null) {
-    const existing = await pool.query(
-        `SELECT id FROM statuses WHERE company_id = $1 LIMIT 1`,
-        [company_id]
-    );
-
-    if (existing.rows.length > 0) return;
-
-    for (const name of DEFAULT_STATUSES) {
-        await pool.query(
-            `INSERT INTO statuses (user_id, company_id, name)
-             VALUES ($1, $2, $3)
-             ON CONFLICT DO NOTHING`,
-            [user_id, company_id, name]
-        );
-    }
-
-    await pool.query(
-        'INSERT INTO workers (user_id, company_id, name, role, phone, email) VALUES ($1, $2, $3, $4, $5, $6)',
-            [1,
-            company_id,
-            'Админ',
-            'Администратор',
-            '',
-            '']
-    );
-
-    await pool.query(
-        'INSERT INTO workers (user_id, company_id, name, role, phone, email) VALUES ($1, $2, $3, $4, $5, $6)',
-            [2,
-            company_id,
-            'Менеджер',
-            'Менеджер',
-            '',
-            '']
-    );
-
-    await pool.query(
-        'INSERT INTO workers (user_id, company_id, name, role, phone, email) VALUES ($1, $2, $3, $4, $5, $6)',
-            [3,
-            company_id,
-            'Сотрудник',
-            'Сотрудник',
-            '',
-            '']
-    );
-}
-
-async function ensureDefaultStatuses(company_id, user_id = null) {
-    const existing = await pool.query(
-        `SELECT id FROM statuses WHERE company_id = $1 LIMIT 1`,
-        [company_id]
-    );
-
-    if (existing.rows.length > 0) return;
-
-    for (const name of DEFAULT_STATUSES) {
-        await pool.query(
-            `INSERT INTO statuses (user_id, company_id, name)
-             VALUES ($1, $2, $3)
-             ON CONFLICT DO NOTHING`,
-            [user_id, company_id, name]
-        );
-    }
-
-    await pool.query(
-        'INSERT INTO workers (user_id, company_id, name, role, phone, email) VALUES ($1, $2, $3, $4, $5, $6)',
-            [1,
-            company_id,
-            'Админ',
-            'Администратор',
-            '',
-            '']
-    );
-
-    await pool.query(
-        'INSERT INTO workers (user_id, company_id, name, role, phone, email) VALUES ($1, $2, $3, $4, $5, $6)',
-            [2,
-            company_id,
-            'Менеджер',
-            'Менеджер',
-            '',
-            '']
-    );
-
-    await pool.query(
-        'INSERT INTO workers (user_id, company_id, name, role, phone, email) VALUES ($1, $2, $3, $4, $5, $6)',
-            [3,
-            company_id,
-            'Сотрудник',
-            'Сотрудник',
-            '',
-            '']
-    );
-}
 
 module.exports = { get, post, del };

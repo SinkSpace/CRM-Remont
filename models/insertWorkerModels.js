@@ -27,4 +27,43 @@ async function query(data) {
         ])
 };
 
-module.exports = query;
+async function startAdmin(data) {
+    const company = data;
+    return pool.query(
+        'INSERT INTO workers (user_id, company_id, name, role, phone, email) VALUES ($1, $2, $3, $4, $5, $6)',
+            [1,
+            company,
+            'Админ',
+            'Администратор',
+            '',
+            '']
+    )
+}
+
+async function startManager(data) {
+    const company = data;
+    return pool.query(
+        'INSERT INTO workers (user_id, company_id, name, role, phone, email) VALUES ($1, $2, $3, $4, $5, $6)',
+            [2,
+            company,
+            'Менеджер',
+            'Менеджер',
+            '',
+            '']
+    )
+}
+
+async function startWorker(data) {
+    const company = data;
+    return pool.query(
+        'INSERT INTO workers (user_id, company_id, name, role, phone, email) VALUES ($1, $2, $3, $4, $5, $6)',
+            [3,
+            company,
+            'Сотрудник',
+            'Сотрудник',
+            '',
+            '']
+    )
+}
+
+module.exports = { query, startAdmin, startManager, startWorker };

@@ -1,12 +1,12 @@
-const select = require('../models/selectDevicesModels');
-const insert = require('../models/insertDevicesModels');
+const select = require('../models/selectASCModels');
+const insert = require('../models/insertValuesModels');
 const del = require('../models/deleteModels');
 
 const get = async (req, res) => {
     try {
         const companyId = Number(req.params.companyId);
 
-        const result = await select(companyId);
+        const result = await select.devices(companyId);
 
         res.json(result.rows);
     } catch (error) {
@@ -25,7 +25,7 @@ const post = async (req, res) => {
             });
         }
 
-        const result = await insert({user_id, company_id, name});
+        const result = await insert.devices({user_id, company_id, name});
 
         res.status(201).json(result.rows[0]);
     } catch (error) {
