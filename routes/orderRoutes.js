@@ -10,6 +10,6 @@ router.get('/orders/company/:companyId', get.getCompanyID);
 
 router.put('/orders/:id', get.updateOrder);
 
-router.get('/api/orders/:id/archive', get.getArchiveID);
+router.put('/api/orders/:id/archive', get.archiveOrder);
 
 module.exports = router;

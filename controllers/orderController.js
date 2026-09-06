@@ -150,7 +150,7 @@ const updateOrder = async (req, res) => {
     }
 };
 
-const getArchiveID = async (req, res) => {
+const archiveOrder = async (req, res) => {
     try {
         const id = Number(req.params.id);
         const { company_id, user_id } = req.body;
@@ -189,4 +189,4 @@ const getArchiveID = async (req, res) => {
     }
 };
 
-module.exports = { postOrders, getOrders, getCompanyID, updateOrder, getArchiveID };
+module.exports = { postOrders, getOrders, getCompanyID, updateOrder, archiveOrder };

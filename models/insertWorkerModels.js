@@ -30,7 +30,7 @@ async function startAdmin(data) {
     const company_id = data;
     return pool.query(
         'INSERT INTO workers (user_id, company_id, name, role, phone, email) VALUES ($1, $2, $3, $4, $5, $6)',
-            [1,
+            [null,
             company_id,
             'Админ',
             'Администратор',

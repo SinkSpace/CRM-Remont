@@ -6,6 +6,12 @@ const select = require('../models/selectAIModels');
 
 dotenv.config();
 
+const https = require('https');
+
+const agent = new https.Agent({
+    rejectUnauthorized: false
+});
+
 const OAUTH_URL =
   "https://ngw.devices.sberbank.ru:9443/api/v2/oauth";
 
@@ -20,6 +26,7 @@ async function getToken() {
   const res = await axios({
     method: "post",
     url: OAUTH_URL,
+    httpsAgent: agent,
     headers: {
       "Content-Type": "application/x-www-form-urlencoded",
       Accept: "application/json",
