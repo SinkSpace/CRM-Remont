@@ -11,12 +11,12 @@ async function companies(data) {
 }
 
 async function users(data) {
-    const { email, hash, company_id } = data;
+    const { email, password_hash, company_id } = data;
     return await pool.query(
         `INSERT INTO users (email, password_hash, role, company_id)
          VALUES ($1, $2, $3, $4)
          RETURNING id, email, role, company_id`,
-        [email, hash, 'master', company_id]
+        [email, password_hash, 'master', company_id]
     );
 }
 
