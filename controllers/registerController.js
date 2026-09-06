@@ -42,9 +42,9 @@ const postRegister = async (req, res) => {
         const companyResult = await insertRegister.companies({shop_name, display_name});
         const company = companyResult.rows[0];
 
-        const passwordHash = await bcrypt.hash(password, 10);
+        const password_hash = await bcrypt.hash(password, 10);
         const company_id = company.id;
-        const userResult = await insertRegister.users({email, passwordHash, company_id});
+        const userResult = await insertRegister.users({email, password_hash, company_id});
         const user = userResult.rows[0];
         const user_id = user.id;
 
