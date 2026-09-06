@@ -2,7 +2,7 @@ const pool = require('../db');
 
 async function upsertContact(data) {
     const { company_id, customer, phone } = data;
-    const phone_normalized = String(phone).replace(/\D/g, '');;
+    const phone_normalized = String(phone).replace(/\D/g, '');
 
     if (!customer || !phone_normalized) return null;
 

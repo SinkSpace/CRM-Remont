@@ -19,7 +19,7 @@ async function orders(data) {
         company_id 
     } = data;
     
-    const result = await pool.query(
+    return await pool.query(
         `UPDATE orders
          SET phone = $1,
              customer = $2,
@@ -68,8 +68,6 @@ async function orders(data) {
             company_id
         ]
     );
-
-    return result;
 }
 
 async function archived(data) {

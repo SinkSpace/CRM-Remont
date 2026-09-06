@@ -36,7 +36,7 @@ const postOrders = async (req, res) => {
         }
 
         await upsert.upsertContact({company_id, customer, phone});
-        await upsert.upsertDevice({company_id, user_id, device});
+        await upsert.upsertDevice({company_id, user_id, name: device});
 
         const result = await query(req.body);
 

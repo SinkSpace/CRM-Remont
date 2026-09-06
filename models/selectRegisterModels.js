@@ -1,6 +1,4 @@
-const express = require('express');
 const pool = require('../db');
-const client = pool.connect();
 
 async function email(data) {
     const email = data;
