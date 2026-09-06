@@ -1,12 +1,12 @@
 const pool = require('../db');
 
 async function companies(data) {
-    const { shop, display } = data;
+    const { shop_name, display_name } = data;
     return await pool.query(
         `INSERT INTO companies (name)
          VALUES ($1)
          RETURNING id, name`,
-        [shop || display]
+        [shop_name || display_name]
     );
 }
 
