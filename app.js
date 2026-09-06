@@ -5,6 +5,8 @@ const app = express(); /* создание веб-приложения */
 const fs = require('fs');
 const templatesDir = path.join(__dirname, 'uploads', 'templates');
 const generatedDir = path.join(__dirname, 'uploads', 'generated');
+require('dotenv').config();
+
 /******** Middleware *********/
 const { configureMiddleware } = require('./middleware/middleware');
 configureMiddleware(app);
