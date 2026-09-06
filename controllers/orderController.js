@@ -1,4 +1,4 @@
-const order = require('../models/orderModels');
+const orderModels = require('../models/orderModels');
 const writeLog = require('../models/writeLog');
 const beforeModels = require('../models/beforeModels');
 const update = require('../models/updateModels');
@@ -36,7 +36,7 @@ const postOrders = async (req, res) => {
         await upsert.upsertContact({company_id, customer, phone});
         await upsert.upsertDevice({company_id, user_id, name: device});
 
-        const result = await order.order(req.body);
+        const result = await orderModels.order(req.body);
 
         const order = result.rows[0];
 
@@ -71,7 +71,7 @@ const getOrders = async (req, res) => {
             return res.status(400).json({ error: 'company_id required' });
         }
 
-        const result = await order.findOrder(company_id);
+        const result = await orderModels.findOrder(company_id);
 
         res.json(result.rows);
     } catch (error) {
@@ -84,7 +84,7 @@ const getCompanyID = async (req, res) => {
     try {
         const companyId = Number(req.params.companyId);
 
-        const result = await order.findAll(companyId);
+        const result = await orderModels.findAll(companyId);
 
         res.json(result.rows);
     } catch (error) {

@@ -1,3 +1,6 @@
+const user = JSON.parse(localStorage.getItem('user'));
+if (user) window.location.href = '/';
+
 const registerButton = document.getElementById('reg');
 const nameInput = document.getElementById('nameCRM');
 const emailInput = document.getElementById('email');
@@ -11,7 +14,7 @@ registerButton.addEventListener('click', async () => {
     const repeatPassword = repeatPasswordInput.value;
 
     if (!display_name || !email || !password || !repeatPassword) {
-        alert('Заполни все поля');
+        alert('Заполните все поля');
         return;
     }
 

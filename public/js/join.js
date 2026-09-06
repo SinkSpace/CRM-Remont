@@ -1,3 +1,6 @@
+const user = JSON.parse(localStorage.getItem('user'));
+if (user) window.location.href = '/';
+
 const loginButton = document.getElementById('join');
 const emailInput = document.getElementById('email');
 const passwordInput = document.getElementById('password');
