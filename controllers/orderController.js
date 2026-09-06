@@ -1,6 +1,4 @@
-const query = require('../models/orderModels');
-const selectOrderModels = require('../models/selectOrderModels');
-const selectAllOrderModels = require('../models/selectAllOrderModels');
+const order = require('../models/orderModels');
 const writeLog = require('../models/writeLog');
 const beforeModels = require('../models/beforeModels');
 const update = require('../models/updateModels');
@@ -38,7 +36,7 @@ const postOrders = async (req, res) => {
         await upsert.upsertContact({company_id, customer, phone});
         await upsert.upsertDevice({company_id, user_id, name: device});
 
-        const result = await query(req.body);
+        const result = await order.order(req.body);
 
         const order = result.rows[0];
 
@@ -73,7 +71,7 @@ const getOrders = async (req, res) => {
             return res.status(400).json({ error: 'company_id required' });
         }
 
-        const result = await selectOrderModels(company_id);
+        const result = await order.findOrder(company_id);
 
         res.json(result.rows);
     } catch (error) {
@@ -86,7 +84,7 @@ const getCompanyID = async (req, res) => {
     try {
         const companyId = Number(req.params.companyId);
 
-        const result = await selectAllOrderModels(companyId);
+        const result = await order.findAll(companyId);
 
         res.json(result.rows);
     } catch (error) {
@@ -95,7 +93,7 @@ const getCompanyID = async (req, res) => {
     }
 };
 
-const getID = async (req, res) => {
+const updateOrder = async (req, res) => {
     try {
         const id = Number(req.params.id);
 
@@ -191,4 +189,4 @@ const getArchiveID = async (req, res) => {
     }
 };
 
-module.exports = { postOrders, getOrders, getCompanyID, getID, getArchiveID };
+module.exports = { postOrders, getOrders, getCompanyID, updateOrder, getArchiveID };

@@ -3,7 +3,7 @@ const http = require('http');
 const fs = require('fs');
 const app = require('./app');
 
-const domain = 'crmsink.ru';
+const domain = process.env.DOMAIN || 'localhost';
 const options = {
   key: fs.readFileSync(`/etc/letsencrypt/live/${domain}/privkey.pem`),
   cert: fs.readFileSync(`/etc/letsencrypt/live/${domain}/fullchain.pem`)

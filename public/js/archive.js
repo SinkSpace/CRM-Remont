@@ -83,7 +83,7 @@ function renderArchiveTasks() {
 function unarchiveTask(id) {
     if (!confirm('Восстановить заказ из архива?')) return;
 
-    fetch(`/api/orders/:id/unarchive`, {
+    fetch(`/api/orders/${id}/unarchive`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

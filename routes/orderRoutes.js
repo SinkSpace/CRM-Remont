@@ -8,7 +8,7 @@ router.get('/orders', get.getOrders);
 
 router.get('/orders/company/:companyId', get.getCompanyID);
 
-router.get('/orders/:id', get.getID);
+router.put('/orders/:id', get.updateOrder);
 
 router.get('/api/orders/:id/archive', get.getArchiveID);
 

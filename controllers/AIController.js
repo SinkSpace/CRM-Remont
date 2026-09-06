@@ -1,4 +1,3 @@
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 const axios = require("axios");
 const qs = require("qs");
 const { v4: uuidv4 } = require("uuid");

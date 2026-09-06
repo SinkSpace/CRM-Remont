@@ -1,14 +1,5 @@
 const pool = require('../db');
 
-async function isAdmin(admin_id) {
-    const result = await pool.query(
-        'SELECT id FROM users WHERE id = $1 AND role = $2 AND is_active = true',
-        [admin_id, 'admin']
-    );
-
-    return result.rows.length > 0;
-}
-
 async function checkSiteAdmin(adminId) {
     const result = await pool.query(
         `SELECT id, email, role
@@ -59,7 +50,7 @@ const get = async (req, res) => {
     try {
         const adminId = Number(req.query.admin_id);
 
-        if (!await isAdmin(adminId)) {
+        if (!await checkSiteAdmin(adminId)) {
             return res.status(403).json({ error: 'Доступ запрещён' });
         }
 
@@ -123,7 +114,7 @@ const settings = async (req, res) => {
             registration_enabled
         } = req.body;
 
-        if (!await isAdmin(Number(admin_id))) {
+        if (!await checkSiteAdmin(Number(admin_id))) {
             return res.status(403).json({ error: 'Доступ запрещён' });
         }
 
