@@ -21,12 +21,12 @@ async function users(data) {
 }
 
 async function userProfiles(data) {
-    const { user_id, company_id, display, shop, phone } = data;
+    const { user_id, company_id, display_name, shop_name, phone } = data;
     return await pool.query(
         `INSERT INTO user_profiles (user_id, company_id, display_name, shop_name, phone)
          VALUES ($1, $2, $3, $4, $5)
          RETURNING *`,
-        [user_id, company_id, display, shop || null, phone || null]
+        [user_id, company_id, display_name, shop_name || null, phone || null]
     );
 }
 
