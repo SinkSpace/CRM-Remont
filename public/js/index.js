@@ -194,6 +194,8 @@ function renderTasks() {
     const repSearch = (search?.value || '').trim().toLowerCase();
     const statusFilter = complete?.value || 'Все статусы';
 
+    const isSearchActive = repSearch !== '';
+
     if (!Array.isArray(tasks) || tasks.length === 0) {
         table.style.visibility = "hidden";
         noTask.style.display = "block";
@@ -231,6 +233,11 @@ function renderTasks() {
     filtered.forEach((task, index) => {
         const tr = document.createElement('section');
         tr.classList.add('mainTable');
+
+        if (isSearchActive) {
+            tr.style.animation = 'none';
+        }
+
         const daysLeft = Number(task.deadline) || 0;
         tr.innerHTML = /* создание ячеек */ `
         <div class="tdNumber">${index + 1}</div>
@@ -715,6 +722,15 @@ async function loadContactHints(query = '') {
 /* 9.1: Сортировка */
 function sortTasks(field, visual) {
 
+    document.getElementById('modelHead').onclick = () => sortTasks('model', document.getElementById('modelHead'));
+    document.getElementById('statusHead').onclick = () => sortTasks('status', document.getElementById('statusHead'));
+    document.getElementById('bugHead').onclick = () => sortTasks('crush', document.getElementById('bugHead'));
+    document.getElementById('priceHead').onclick = () => sortTasks('price', document.getElementById('priceHead'));
+    document.getElementById('workerHead').onclick = () => sortTasks('worker', document.getElementById('workerHead'));
+    document.getElementById('dateHead').onclick = () => sortTasks('acceptDate', document.getElementById('dateHead'));
+
+    document.getElementById('numberHead').onclick = resetSort;
+
     if (oldVisual) {
         oldVisual.textContent = oldVisual.textContent.replace('⬇️', '');
         oldVisual.textContent = oldVisual.textContent.replace('⬆️', '');
@@ -736,6 +752,21 @@ function sortTasks(field, visual) {
         });
 
     oldVisual = visual;
+
+    renderTasks();
+}
+
+/* 9.2 Сброс сортировки */
+function resetSort() {
+    tasks.sort((a, b) => b.id - a.id);
+
+    if (oldVisual) {
+        oldVisual.textContent = oldVisual.textContent.replace('⬇️', '');
+        oldVisual.textContent = oldVisual.textContent.replace('⬆️', '');
+        oldVisual = null;
+    }
+
+    sortDir = 1;
 
     renderTasks();
 }

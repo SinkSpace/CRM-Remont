@@ -8,6 +8,7 @@ search.addEventListener('input', renderArchiveTasks);
 
 document.addEventListener('DOMContentLoaded', () => {
     loadArchiveTasks();
+    sortTasks();
 });
 
 function loadArchiveTasks() {
@@ -173,4 +174,55 @@ async function warrantyTask(orderId) {
         console.error('Ошибка генерации гарантии:', error);
         alert(error.message);
     }
+}
+
+function sortTasks(field, visual) {
+
+    document.getElementById('modelHead').onclick = () => sortTasks('model', document.getElementById('modelHead'));
+    document.getElementById('statusHead').onclick = () => sortTasks('status', document.getElementById('statusHead'));
+    document.getElementById('bugHead').onclick = () => sortTasks('crush', document.getElementById('bugHead'));
+    document.getElementById('priceHead').onclick = () => sortTasks('price', document.getElementById('priceHead'));
+    document.getElementById('workerHead').onclick = () => sortTasks('worker', document.getElementById('workerHead'));
+    document.getElementById('dateHead').onclick = () => sortTasks('acceptDate', document.getElementById('dateHead'));
+    document.getElementById('dateBeginHead').onclick = () => sortTasks('acceptDate', document.getElementById('dateBeginHead'));
+
+    document.getElementById('numberHead').onclick = resetSort;
+
+    if (oldVisual) {
+        oldVisual.textContent = oldVisual.textContent.replace('⬇️', '');
+        oldVisual.textContent = oldVisual.textContent.replace('⬆️', '');
+    }
+
+    sortDir *= -1;
+
+    if (sortDir != 1 || visual != oldVisual) visual.textContent += '⬇️'; 
+    else if (sortDir == 1) visual.textContent += '⬆️';
+
+    tasks.sort((a,b) => {
+        if (a[field] > b[field]) return 1 * sortDir; /* */
+        if (a[field] < b[field]) return -1 * sortDir; /* */
+    });
+
+    if (field == 'price')
+        tasks.sort((a, b) => {
+            return (Number(a.price) - Number(b.price)) * sortDir; /* */
+        });
+
+    oldVisual = visual;
+
+    renderTasks();
+}
+
+function resetSort() {
+    tasks.sort((a, b) => b.id - a.id);
+
+    if (oldVisual) {
+        oldVisual.textContent = oldVisual.textContent.replace('⬇️', '');
+        oldVisual.textContent = oldVisual.textContent.replace('⬆️', '');
+        oldVisual = null;
+    }
+
+    sortDir = 1;
+
+    renderTasks();
 }

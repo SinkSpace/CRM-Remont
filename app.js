@@ -93,12 +93,6 @@ const AIRoutes = require('./routes/AIRoutes');
 
 app.use('/', AIRoutes);
 
-/******** Админ-панель *********/
-
-const adminRoutes = require('./routes/adminRoutes');
-
-app.use('/', adminRoutes);
-
 /******** 404 *********/
 
 app.use(notFound);
