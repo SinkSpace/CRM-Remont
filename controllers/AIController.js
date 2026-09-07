@@ -1,5 +1,4 @@
 const axios = require('axios');
-const https = require('https');
 const fs = require('fs');
 const qs = require('qs');
 const path = require('path');
@@ -7,28 +6,9 @@ const { v4: uuidv4 } = require('uuid');
 const dotenv = require('dotenv');
 const select = require('../models/selectAIModels');
 
-dotenv.config();
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 
-let httpsAgent;
-try {
-    const certPath = path.join(__dirname, '..', 'gigachat-cert.pem');
-    if (fs.existsSync(certPath)) {
-        httpsAgent = new https.Agent({
-            ca: fs.readFileSync(certPath)
-        });
-        console.log('Сертификат загружен:', certPath);
-    } else {
-        console.warn('Сертификат не найден, используется rejectUnauthorized: false');
-        httpsAgent = new https.Agent({
-            rejectUnauthorized: false
-        });
-    }
-} catch (error) {
-    console.warn('Ошибка загрузки сертификата:', error.message);
-    httpsAgent = new https.Agent({
-        rejectUnauthorized: false
-    });
-}
+dotenv.config();
 
 const OAUTH_URL = "https://ngw.devices.sberbank.ru:9443/api/v2/oauth";
 const CHAT_URL = "https://gigachat.devices.sberbank.ru/api/v1/chat/completions";
@@ -41,7 +21,6 @@ async function getToken() {
     const res = await axios({
         method: "post",
         url: OAUTH_URL,
-        httpsAgent: httpsAgent,
         headers: {
             "Content-Type": "application/x-www-form-urlencoded",
             Accept: "application/json",
@@ -65,7 +44,6 @@ async function chat(token, message) {
     const res = await axios({
         method: 'post',
         url: CHAT_URL,
-        httpsAgent: httpsAgent,
         headers: {
             'Content-Type': 'application/json',
             Accept: 'application/json',
