@@ -1,10 +1,13 @@
 const get = require('../controllers/documentController');
 const express = require('express');
 const router = express.Router();
+const upload = require('../middleware/upload');
+
+
 
 /* 9.1 Получение */
 
-router.post('/api/templates/upload', get.post);
+router.post('/api/templates/upload', upload.single('template'), get.post);
 
 router.get('/api/templates/:companyId', get.get);
 
