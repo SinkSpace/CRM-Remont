@@ -11,7 +11,7 @@ search.addEventListener('input', renderArchiveTasks);
 
 document.addEventListener('DOMContentLoaded', () => {
     loadArchiveTasks();
-    sortTasks();
+    initSortHandlers();
 });
 
 function loadArchiveTasks() {
@@ -33,6 +33,7 @@ function renderArchiveTasks() {
     const noSearch = document.getElementById('noSearch');
 
     const repSearch = (search?.value || '').trim().toLowerCase();
+    const isSearchActive = repSearch !== '';
 
     if (!archiveTasks.length) {
         table.style.visibility = 'hidden';
@@ -65,6 +66,10 @@ function renderArchiveTasks() {
         const tr = document.createElement('section');
         tr.classList.add('mainTable');
 
+        if (isSearchActive) {
+            tr.style.animation = 'none';
+        }
+
         tr.innerHTML = `
             <div class="tdNumber">${index + 1}</div>
             <div class="tdModel">${escapeHtml(task.model || '')}</div>
@@ -82,6 +87,66 @@ function renderArchiveTasks() {
 
         table.appendChild(tr);
     });
+}
+
+function initSortHandlers() {
+    document.getElementById('modelHead').onclick = () => sortArchiveTasks('model', document.getElementById('modelHead'));
+    document.getElementById('statusHead').onclick = () => sortArchiveTasks('status', document.getElementById('statusHead'));
+    document.getElementById('bugHead').onclick = () => sortArchiveTasks('crush', document.getElementById('bugHead'));
+    document.getElementById('priceHead').onclick = () => sortArchiveTasks('price', document.getElementById('priceHead'));
+    document.getElementById('workerHead').onclick = () => sortArchiveTasks('worker', document.getElementById('workerHead'));
+    document.getElementById('dateHead').onclick = () => sortArchiveTasks('archived_at', document.getElementById('dateHead'));
+    document.getElementById('dateBeginHead').onclick = () => sortArchiveTasks('acceptDate', document.getElementById('dateBeginHead'));
+    document.getElementById('numberHead').onclick = resetSort;
+}
+
+function sortArchiveTasks(field, visual) {
+    if (oldVisual) {
+        oldVisual.textContent = oldVisual.textContent.replace('⬇️', '').replace('⬆️', '').trim();
+        oldVisual = null;
+    }
+
+    sortDir *= -1;
+
+    visual.textContent += sortDir === 1 ? '⬇️' : '⬆️';
+    oldVisual = visual;
+
+    archiveTasks.sort((a, b) => {
+        let valA = a[field] ?? '';
+        let valB = b[field] ?? '';
+
+        if (field === 'price') {
+            valA = Number(valA) || 0;
+            valB = Number(valB) || 0;
+            return (valA - valB) * sortDir;
+        }
+
+        if (field === 'acceptDate' || field === 'archived_at') {
+            valA = new Date(valA).getTime() || 0;
+            valB = new Date(valB).getTime() || 0;
+            return (valA - valB) * sortDir;
+        }
+
+        valA = String(valA).toLowerCase();
+        valB = String(valB).toLowerCase();
+        if (valA > valB) return 1 * sortDir;
+        if (valA < valB) return -1 * sortDir;
+        return 0;
+    });
+
+    renderArchiveTasks();
+}
+
+function resetSort() {
+    archiveTasks.sort((a, b) => b.id - a.id);
+
+    if (oldVisual) {
+        oldVisual.textContent = oldVisual.textContent.replace('⬇️', '').replace('⬆️', '').trim();
+        oldVisual = null;
+    }
+
+    sortDir = 1;
+    renderArchiveTasks();
 }
 
 function unarchiveTask(id) {
@@ -177,54 +242,4 @@ async function warrantyTask(orderId) {
         console.error('Ошибка генерации гарантии:', error);
         alert(error.message);
     }
-}
-
-function sortTasks(field, visual) {
-    document.getElementById('modelHead').onclick = () => sortTasks('model', document.getElementById('modelHead'));
-    document.getElementById('statusHead').onclick = () => sortTasks('status', document.getElementById('statusHead'));
-    document.getElementById('bugHead').onclick = () => sortTasks('crush', document.getElementById('bugHead'));
-    document.getElementById('priceHead').onclick = () => sortTasks('price', document.getElementById('priceHead'));
-    document.getElementById('workerHead').onclick = () => sortTasks('worker', document.getElementById('workerHead'));
-    document.getElementById('dateHead').onclick = () => sortTasks('acceptDate', document.getElementById('dateHead'));
-    document.getElementById('dateBeginHead').onclick = () => sortTasks('acceptDate', document.getElementById('dateBeginHead'));
-
-    document.getElementById('numberHead').onclick = resetSort;
-
-    if (oldVisual) {
-        oldVisual.textContent = oldVisual.textContent.replace('⬇️', '');
-        oldVisual.textContent = oldVisual.textContent.replace('⬆️', '');
-    }
-
-    sortDir *= -1;
-
-    if (sortDir != 1 || visual != oldVisual) visual.textContent += '⬇️'; 
-    else if (sortDir == 1) visual.textContent += '⬆️';
-
-    tasks.sort((a,b) => {
-        if (a[field] > b[field]) return 1 * sortDir; /* */
-        if (a[field] < b[field]) return -1 * sortDir; /* */
-    });
-
-    if (field == 'price')
-        tasks.sort((a, b) => {
-            return (Number(a.price) - Number(b.price)) * sortDir; /* */
-        });
-
-    oldVisual = visual;
-
-    renderTasks();
-}
-
-function resetSort() {
-    tasks.sort((a, b) => b.id - a.id);
-
-    if (oldVisual) {
-        oldVisual.textContent = oldVisual.textContent.replace('⬇️', '');
-        oldVisual.textContent = oldVisual.textContent.replace('⬆️', '');
-        oldVisual = null;
-    }
-
-    sortDir = 1;
-
-    renderTasks();
 }
