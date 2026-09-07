@@ -382,6 +382,10 @@ async function uploadTemplate() {
             return;
         }
 
+        if (file.name.slice(-5) != '.docx') {
+            alert('Неверный формат файла. Необходим файл .docx');
+        }
+
         const formData = new FormData();
         formData.append('name', name);
         formData.append('company_id', user.company_id);
