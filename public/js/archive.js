@@ -1,3 +1,5 @@
+let oldVisual = null;
+
 const user = JSON.parse(localStorage.getItem('user'));
 if (!user) window.location.href = '/start';
 
@@ -177,7 +179,6 @@ async function warrantyTask(orderId) {
 }
 
 function sortTasks(field, visual) {
-
     document.getElementById('modelHead').onclick = () => sortTasks('model', document.getElementById('modelHead'));
     document.getElementById('statusHead').onclick = () => sortTasks('status', document.getElementById('statusHead'));
     document.getElementById('bugHead').onclick = () => sortTasks('crush', document.getElementById('bugHead'));
