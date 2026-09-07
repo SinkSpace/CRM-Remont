@@ -1,9 +1,7 @@
 const get = require('../controllers/documentController');
 const express = require('express');
 const router = express.Router();
-const upload = require('../middleware/upload');
-
-
+const upload = require('../middleware/middleware');
 
 /* 9.1 Получение */
 
