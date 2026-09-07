@@ -8,7 +8,7 @@ const generatedDir = path.join(__dirname, 'uploads', 'generated');
 require('dotenv').config();
 
 /******** Middleware *********/
-const { configureMiddleware } = require('./middleware/middleware');
+const { configureMiddleware, notFound } = require('./middleware/middleware');
 configureMiddleware(app);
 
 /******** Создание папок *********/
@@ -98,6 +98,10 @@ app.use('/', AIRoutes);
 const adminRoutes = require('./routes/adminRoutes');
 
 app.use('/', adminRoutes);
+
+/******** 404 *********/
+
+app.use(notFound);
 
 /******** Запуск сервера *********/
 
