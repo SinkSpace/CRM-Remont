@@ -84,6 +84,19 @@ async function archived(data) {
     return result;
 }
 
+async function unarchived(data) {
+    const { id, company_id } = data;
+    const result = await pool.query(
+        `UPDATE orders
+         SET is_archived = false,
+             archived_at = NULL
+         WHERE id = $1 AND company_id = $2
+         RETURNING *`,
+        [id, company_id]
+    );
+    return result;
+}
+
 async function companies(data) {
     const { user_id, company_id } = data;
     const result = await pool.query( 
@@ -168,4 +181,4 @@ async function worker(data) {
     )
 }
 
-module.exports = { orders, archived, companies, companiesJSON, user, worker };
+module.exports = { orders, archived, unarchived, companies, companiesJSON, user, worker };

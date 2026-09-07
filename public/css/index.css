@@ -141,7 +141,7 @@ main {
         10.469vw;
 }
 
-#orderTable {
+#orderTable, #archiveTable {
     background-color: white;
     border-radius: 10px 10px 0px 0px;
     min-height: 77vh;

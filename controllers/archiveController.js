@@ -33,7 +33,7 @@ const unarchive = async (req, res) => {
             return res.status(404).json({ error: 'Заказ не найден' });
         }
 
-        const result = await updateModels.archived({id, company_id});
+        const result = await updateModels.unarchived({id, company_id});
 
         await writeLog({
             company_id,
