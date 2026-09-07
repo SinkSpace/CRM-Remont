@@ -384,6 +384,7 @@ async function uploadTemplate() {
 
         if (file.name.slice(-5) != '.docx') {
             alert('Неверный формат файла. Необходим файл .docx');
+            return;
         }
 
         const formData = new FormData();
