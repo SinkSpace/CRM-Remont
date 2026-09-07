@@ -321,7 +321,7 @@ async function generateDocument(orderId) {
 
         const templateId = templates[0].id;
 
-        const response = await fetch('/api/documents/generate', {
+        const response = await fetch('/api/document/generate', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
