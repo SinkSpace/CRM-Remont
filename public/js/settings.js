@@ -34,6 +34,7 @@ document.addEventListener('DOMContentLoaded', () => {
     bindTemplateUpload();
     loadWarrantyTemplates();
     bindWarrantyTemplateUpload();
+    loadContactHints();
 });
 
 async function loadDevices() {
@@ -775,5 +776,32 @@ async function deleteStatus(id) {
     } catch (error) {
         console.error('Ошибка удаления статуса:', error);
         alert(error.message);
+    }
+}
+
+async function loadContactHints(query = '') {
+    try {
+        const response = await fetch(`/api/contacts/${user.company_id}?q=${encodeURIComponent(query)}`); //URL
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || 'Ошибка загрузки контактов');
+        }
+
+        contactHints = Array.isArray(data) ? data : []; //пустой массив, если контактов нет
+
+        const list = document.getElementById('contactHints'); //использование тега контактов на странице
+        if (!list) return; //если тега нет - результат пустой
+
+        list.innerHTML = '';
+
+        contactHints.forEach(contact => {
+            const option = document.createElement('option'); //создание пункта списка
+            option.value = contact.phone; //добавление телефона
+            option.label = `${contact.customer_name} — ${contact.phone}`;
+            list.appendChild(option); //закрытие тега
+        });
+    } catch (error) {
+        console.error('Ошибка загрузки контактов:', error);
     }
 }
