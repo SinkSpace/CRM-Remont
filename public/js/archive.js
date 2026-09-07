@@ -142,7 +142,7 @@ async function warrantyTask(orderId) {
             templates.find(t => String(t.name).toLowerCase().includes('гарант')) ||
             templates[0];
 
-        const response = await fetch('/api/documents/generate', {
+        const response = await fetch('/api/document/generate', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
