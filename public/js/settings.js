@@ -378,7 +378,7 @@ async function uploadTemplate() {
         const file = fileInput.files[0];
 
         if (!name || !file) {
-            alert('Укажи название и выбери docx-файл');
+            alert('Укажите название и выберите docx-файл');
             return;
         }
 
@@ -489,7 +489,12 @@ async function uploadWarrantyTemplate() {
         const file = fileInput.files[0];
 
         if (!name || !file) {
-            alert('Укажи название и выбери docx-файл');
+            alert('Укажите название и выберите docx-файл');
+            return;
+        }
+
+        if (file.name.slice(-5) != '.docx') {
+            alert('Неверный формат файла. Необходим файл .docx');
             return;
         }
 

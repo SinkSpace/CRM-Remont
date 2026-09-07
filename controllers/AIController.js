@@ -6,10 +6,8 @@ const select = require('../models/selectAIModels');
 
 dotenv.config();
 
-const https = require('https');
-
-const agent = new https.Agent({
-    rejectUnauthorized: false
+const httpsAgent = new https.Agent({
+    ca: fs.readFileSync(path.join(__dirname, '..', 'gigachat-cert.pem'))
 });
 
 const OAUTH_URL =
@@ -26,7 +24,7 @@ async function getToken() {
   const res = await axios({
     method: "post",
     url: OAUTH_URL,
-    httpsAgent: agent,
+    httpsAgent: httpsAgent,
     headers: {
       "Content-Type": "application/x-www-form-urlencoded",
       Accept: "application/json",
