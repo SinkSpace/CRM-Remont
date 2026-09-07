@@ -4,7 +4,6 @@ const settings = require('../models/settingsModels');
 const selectRegister = require('../models/selectRegisterModels');
 const insertRegister = require('../models/insertRegisterModels');
 const update = require('../models/updateModels');
-const mail = require('../models/mailModels');
 
 const postRegister = async (req, res) => {
     const client = await pool.connect();
@@ -25,11 +24,11 @@ const postRegister = async (req, res) => {
             return res.status(400).json({ error: 'email, password и display_name обязательны' });
         }
 
-        const passwordRegex = /^(?=.*[a-zа-я])(?=.*[A-ZА-Я])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,}$/;
+        const passwordRegex = /^(?=.*[a-zA-Zа-яА-Я])(?=.*\d).{8,}$/;
         if (!passwordRegex.test(password)) {
             await client.query('ROLLBACK');
             return res.status(400).json({
-                error: 'Пароль должен содержать минимум 8 символов, заглавную букву, строчную букву, цифру и специальный символ'
+                error: 'Пароль должен содержать минимум 8 символов, буквы и цифры'
             });
         }
 
@@ -53,11 +52,6 @@ const postRegister = async (req, res) => {
         await update.companies({user_id, company_id});
 
         await client.query('COMMIT');
-
-        mail.sendRegisterEmail(email, display_name) 
-            .catch(mailError => {
-                console.error('Ошибка отправки письма:', mailError);
-            });
 
         res.status(201).json({
             message: 'Пользователь зарегистрирован',
