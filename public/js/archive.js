@@ -1,4 +1,5 @@
 let oldVisual = null;
+let sortDir = 1;
 
 const user = JSON.parse(localStorage.getItem('user'));
 if (!user) window.location.href = '/start';
